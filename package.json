@@ -2,13 +2,13 @@
   "name": "api.pingpublications.com",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "build": "webpack --config webpack.development.js",
-    "build/dev": "webpack --config webpack.development.js",
-    "build/prod": "webpack --config webpack.production.js",
-    "start": "node dist/app",
-    "start:dev": "webpack-dev-server"
+    "build": "webpack",
+    "build:watch": "webpack --watch",
+    "dev": "npm-run-all --parallel start:watch build:watch",
+    "start": "node ./dist/main.js",
+    "start:watch": "nodemon ./dist/main.js"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +16,8 @@
   "devDependencies": {
     "@types/webpack-env": "^1.13.9",
     "clean-webpack-plugin": "^2.0.1",
+    "nodemon": "^1.18.11",
+    "npm-run-all": "^4.1.5",
     "prettier": "^1.17.0",
     "ts-loader": "^5.4.4",
     "typescript": "^3.4.5",
@@ -27,6 +29,7 @@
   },
   "dependencies": {
     "apollo-server": "^2.4.8",
+    "dotenv": "^7.0.0",
     "graphql": "^14.2.1"
   }
 }
