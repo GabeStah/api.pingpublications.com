@@ -1,0 +1,29 @@
+query {
+  repository (name: "api.pingpublications.com", owner: "GabeStah") {
+    ref(qualifiedName: "master") {
+      target {
+        ... on Commit {
+          id
+          history(first: 5) {
+            pageInfo {
+              hasNextPage
+            }
+            edges {
+              node {
+                hash:oid
+                messageHeadline
+                message
+                tarballUrl
+                author {
+                  name
+                  email
+                  date
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

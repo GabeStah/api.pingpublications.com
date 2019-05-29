@@ -1,8 +1,25 @@
+# WebStorm
 .idea
+
+# Environment Vars
+.env
+
+# Package Management
 package-lock.json
 yarn.lock
 yarn-error.log
-node_modules
+
+# Testing
 coverage
+
+# Distribution
 dist
-.env
+
+# Repositories
+.repos
+
+# Local Modules
+local_modules
+
+# Remote Modules
+node_modules

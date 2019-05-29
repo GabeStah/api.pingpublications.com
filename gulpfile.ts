@@ -1,34 +1,255 @@
 import dotenv from 'dotenv';
-dotenv.config();
 import gulp from 'gulp';
 // @ts-ignore
-import minimist from 'minimist';
 import fs from 'fs';
 // @ts-ignore
 import * as _ from 'lodash';
-import mongoose, { Document, Schema, model } from 'mongoose';
 import glob from 'glob';
 
 import unified from 'unified';
 // @ts-ignore
-import remark from 'remark';
 // @ts-ignore
 import parse from 'remark-parse';
 // @ts-ignore
 import frontmatter from 'remark-frontmatter';
 // @ts-ignore
-import recommended from 'remark-preset-lint-recommended';
 // @ts-ignore
 import html from 'remark-html';
-import { VFile } from 'vfile';
+import Git, { Repository } from 'nodegit';
+
+dotenv.config();
 
 const stringify = require('remark-stringify');
 const vfile = require('to-vfile');
 const report = require('vfile-reporter');
 
 const parseFrontmatter = require('remark-parse-yaml');
+const inserter = require('./plugins/inserter');
 
+// var unified = require('unified')
+// var parse = require('remark-parse')
+var remark2rehype = require('remark-rehype');
+// var stringify = require('rehype-stringify')
+// var vfile = require('to-vfile')
+// var report = require('vfile-reporter')
+var getFrontMatter = require('./plugins/get-front-matter');
+
+import { config } from './local_modules/ping-updater/config';
+
+import { Options, Parser } from './local_modules/ping-updater';
+
+// @ts-ignore
+const graphql = require('@octokit/graphql').defaults({
+  headers: {
+    authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`
+  }
+});
+
+import ApolloClient from 'apollo-boost';
+import { gql } from 'apollo-boost';
+// import gql from 'graphql-tag';
+//
+// import { ApolloClient } from 'apollo-client';
+// import { InMemoryCache } from 'apollo-cache-inmemory';
+//
+import fetch from 'node-fetch';
+// import { createHttpLink } from 'apollo-link-http';
+//
+// const link = createHttpLink({ uri: '/graphql', fetch: fetch });
+//
+// import { HttpLink } from 'apollo-link-http';
+// import fetch from 'node-fetch';
+
+// const client = new ApolloClient({
+//   cache: new InMemoryCache(),
+//   link: new HttpLink({
+//     uri: 'https://api.github.com/graphql',
+//     fetch: fetch,
+//     // headers: {
+//     //   authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`
+//     // }
+//   })
+// });
+
+const client = new ApolloClient({
+  headers: {
+    authorization: `token ${process.env.GITHUB_ACCESS_TOKEN}`
+  },
+  fetch: fetch as any,
+  uri: 'https://api.github.com/graphql'
+});
+
+// TODO: https://unified.js.org/create-a-plugin.html
 // TODO: https://github.com/unifiedjs/unified-engine
+
+// gulp.task('git/test', async () => {
+//   try {
+//   } catch (error) {
+//     console.log(error);
+//   }
+// });
+
+gulp.task('github/test', async () => {
+  try {
+    const options: Options = Parser.parse(config);
+
+    console.log(options.repositories);
+    let repo: Repository;
+    for (let repo of options.repositories) {
+      const query = gql`
+        query repositoryHashes(
+          $owner: String!
+          $name: String!
+          $num: Int = 5
+          $refName: String = "master"
+        ) {
+          repository(name: $name, owner: $owner) {
+            ref(qualifiedName: $refName) {
+              target {
+                ... on Commit {
+                  id
+                  history(first: $num) {
+                    pageInfo {
+                      hasNextPage
+                    }
+                    edges {
+                      node {
+                        hash: oid
+                        messageHeadline
+                        message
+                        tarballUrl
+                        author {
+                          name
+                          email
+                          date
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      const result = await client.query({
+        query: query,
+        variables: {
+          name: repo.name,
+          owner: repo.owner,
+          refName: repo.refName,
+          num: 5
+        }
+      });
+
+      const hashes = result.data.repository.ref.target.history.edges.map(
+        ({ node }: any) => {
+          return node.hash;
+        }
+      );
+
+      console.log(hashes);
+
+      // const { repository } = await graphql(
+      //   `
+      //     query repositoryHashes(
+      //       $owner: String!
+      //       $name: String!
+      //       $num: Int = 5
+      //       $refName: String = "master"
+      //     ) {
+      //       repository(name: $name, owner: $owner) {
+      //         ref(qualifiedName: $refName) {
+      //           target {
+      //             ... on Commit {
+      //               id
+      //               history(first: $num) {
+      //                 pageInfo {
+      //                   hasNextPage
+      //                 }
+      //                 edges {
+      //                   node {
+      //                     hash: oid
+      //                     messageHeadline
+      //                     message
+      //                     tarballUrl
+      //                     author {
+      //                       name
+      //                       email
+      //                       date
+      //                     }
+      //                   }
+      //                 }
+      //               }
+      //             }
+      //           }
+      //         }
+      //       }
+      //     }
+      //   `,
+      //   {
+      //     name: repo.name,
+      //     owner: repo.owner,
+      //     refName: repo.refName,
+      //     num: 5
+      //   }
+      // );
+
+      console.log(`--- REPOSITORY FROM API ---`);
+      console.log(result);
+    }
+
+    // // Iterate through repositories
+    // if (config.repositories) {
+    //   // TODO: Query repos from GraphQL prior to local scans
+    //   // See: https://github.com/octokit/graphql.js/tree/master
+    //
+    //   for (const repoObject of config.repositories) {
+    //     let url: string;
+    //     let path: string;
+    //     switch (repoObject.service) {
+    //       case RepositoryServiceTypes.GitHub: {
+    //         url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
+    //         path = `./.repos/${repoObject.owner}/${repoObject.name}`;
+    //         break;
+    //       }
+    //       default: {
+    //         url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
+    //         path = `./.repos/${repoObject.owner}/${repoObject.name}`;
+    //       }
+    //     }
+    //
+    //     /**
+    //      * ??? Start by performing API call with hash of all valid repos?
+    //      *
+    //      * 1. Check if local repo exists.
+    //      * 2. If exists, get hash of most recent commit.
+    //      *   - Compare hash
+    //      */
+    //
+    //     let repository: Repository | void = await Git.Repository.open(
+    //       path
+    //     ).catch(error => {
+    //       if (error.errno !== -3) {
+    //         throw error;
+    //       }
+    //     });
+    //     // Check if local exists.
+    //     if (!repository) {
+    //       repository = await Git.Clone.clone(url, path);
+    //     } else {
+    //       // TODO: Fetch vs pull
+    //       // await repository.fetch();
+    //     }
+    //     const commit: Git.Commit = await repository.getMasterCommit();
+    //     console.log(commit.date(), commit.toString(), commit.message());
+    //   }
+    // }
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 gulp.task('md/test', async () => {
   try {
@@ -54,14 +275,54 @@ gulp.task('md/test', async () => {
       _.forEach(files, (path: string) => {
         console.log(`Path: ${path}`);
         fs.readFile(path, { encoding: 'utf8' }, async (err, data) => {
-          const node: any = await unified()
+          const processor: unified.Processor = await unified()
             // unified()
+            // .use(parse)
+            // // .use(recommended)
+            // // .use(html)
+            // .use(frontmatter)
+            // .use(parseFrontmatter)
+            // .use(inserter, { extname: 'html' })
+            // .process(vfile.readSync(__dirname + '/writs/test.md'), function(
+            //   err,
+            //   file
+            // ) {
+            //   console.error(report(err || file));
+            //   // if (file) {
+            //   //   vfile.writeSync(file) // Written to `index.html`.
+            //   // }
+            // });
+
             .use(parse)
-            // .use(recommended)
-            // .use(html)
+            .use(stringify)
             .use(frontmatter)
             .use(parseFrontmatter)
-            .parse(vfile.readSync(__dirname + '/writs/test.md'));
+            // .use(remark2rehype)
+            .use(getFrontMatter, { extname: '.html' })
+            .use(stringify);
+          // .process(vfile.readSync(__dirname + '/writs/test.md'), function(
+          //   error,
+          //   file
+          // ) {
+          //   console.log(file);
+          //   // console.log(String(file));
+          //   // console.error(error);
+          //   // console.error(report(error || file));
+          // });
+
+          processor
+            .process(vfile.readSync(__dirname + '/writs/test.md'))
+            .then(file => {
+              console.debug('----');
+              console.log(file);
+              console.debug('----');
+            })
+            .catch(error => {
+              console.error(error);
+            });
+
+          // console.log(processor);
+
           // .process(data);
           // .process(data, (error: any, file: any) => {
           //   console.log(file);
@@ -69,14 +330,14 @@ gulp.task('md/test', async () => {
           //   console.error(error);
           //   console.error(report(error || file));
           // });
-
-          console.log(`node`);
-          console.log(node);
-          console.log(node.children[0]);
-
-          const result = await unified().run(node);
-          console.log(`result`);
-          console.log(result);
+          //
+          // console.log(`node`);
+          // console.log(processor);
+          // // console.log(node.children[0]);
+          //
+          // const result = await unified().run(processor);
+          // console.log(`result`);
+          // console.log(result);
           // console.log(output);
         });
       });
