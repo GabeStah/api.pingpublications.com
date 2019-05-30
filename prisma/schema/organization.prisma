@@ -1,0 +1,8 @@
+type Organization implements Owner {
+  id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+  users: [User!]! @relation(link: INLINE)
+  # Owner
+  handle: String! @unique
+}

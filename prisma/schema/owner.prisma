@@ -1,0 +1,6 @@
+type Owner {
+  id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+  handle: String! @unique
+}

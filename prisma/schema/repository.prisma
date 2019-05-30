@@ -1,0 +1,16 @@
+enum RepositoryServiceType {
+  GitHub
+  GitLab
+  Bitbucket
+}
+
+type Repository {
+  id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+
+  name: String!
+  owner: Owner! @relation(link: INLINE)
+  service: RepositoryServiceType! @default(value: GitHub)
+  commits: [Commit!]! @relation(link: INLINE)
+}

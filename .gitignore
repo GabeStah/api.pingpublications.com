@@ -23,3 +23,6 @@ local_modules
 
 # Remote Modules
 node_modules
+
+# Docker
+docker-compose.yml

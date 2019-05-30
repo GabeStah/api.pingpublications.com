@@ -1,0 +1,10 @@
+type User implements Owner {
+  id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+
+  email: String! @unique
+  name: String
+  # Owner
+  handle: String! @unique
+}

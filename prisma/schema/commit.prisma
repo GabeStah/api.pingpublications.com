@@ -1,0 +1,17 @@
+enum CommitStatus {
+  Pending
+  Processed
+}
+
+type Commit {
+  id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+
+  author: [User!]! @relation(link: INLINE)
+  committedDate: DateTime!
+  hash: String! @unique
+  message: String!
+  messageHeadline: String!
+  status: CommitStatus! @default(value: Processed)
+}

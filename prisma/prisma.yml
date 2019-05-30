@@ -1,0 +1,27 @@
+endpoint: http://localhost:4466
+databaseType: relational
+
+datamodel:
+  - schema/commit.prisma
+  - schema/organization.prisma
+  - schema/owner.prisma
+  - schema/repository.prisma
+  - schema/user.prisma
+
+secret: ${env:PRISMA_SECRET}
+
+# Ensures Prisma client is re-generated after a datamodel change.
+# Since Prisma 1.31, the Prisma client is generated automatically after running `prisma deploy`
+#hooks:
+#  post-deploy:
+#    - prisma generate
+
+generate:
+  - generator: typescript-client
+    output: ./generated/client/
+  - generator:
+    output: ./generated/client/
+
+# Seeds initial data into the database by running a script.
+#seed:
+#  run: yarn ts-node ./prisma/seed.ts

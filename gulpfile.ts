@@ -1,4 +1,6 @@
-import dotenv from 'dotenv';
+// Environment Variables
+import './env';
+
 import gulp from 'gulp';
 // @ts-ignore
 import fs from 'fs';
@@ -17,14 +19,12 @@ import frontmatter from 'remark-frontmatter';
 import html from 'remark-html';
 import Git, { Repository } from 'nodegit';
 
-dotenv.config();
-
 const stringify = require('remark-stringify');
 const vfile = require('to-vfile');
 const report = require('vfile-reporter');
 
 const parseFrontmatter = require('remark-parse-yaml');
-const inserter = require('./plugins/inserter');
+const inserter = require('./src/plugins/inserter');
 
 // var unified = require('unified')
 // var parse = require('remark-parse')
@@ -32,9 +32,9 @@ var remark2rehype = require('remark-rehype');
 // var stringify = require('rehype-stringify')
 // var vfile = require('to-vfile')
 // var report = require('vfile-reporter')
-var getFrontMatter = require('./plugins/get-front-matter');
+var getFrontMatter = require('./src/plugins/get-front-matter');
 
-import { config } from './local_modules/ping-updater/config';
+import { config } from './local_modules/ping-updater/src/config';
 
 import { Options, Parser } from './local_modules/ping-updater';
 
@@ -53,6 +53,14 @@ import { gql } from 'apollo-boost';
 // import { InMemoryCache } from 'apollo-cache-inmemory';
 //
 import fetch from 'node-fetch';
+
+import {
+  CommitCreateManyInput,
+  CommitUpsertWithWhereUniqueNestedInput,
+  prisma,
+  UserUpsertWithWhereUniqueNestedInput
+} from './prisma/generated/client';
+
 // import { createHttpLink } from 'apollo-link-http';
 //
 // const link = createHttpLink({ uri: '/graphql', fetch: fetch });
@@ -93,6 +101,12 @@ gulp.task('github/test', async () => {
   try {
     const options: Options = Parser.parse(config);
 
+    await prisma.deleteManyCommits({ createdAt_lte: new Date() });
+    await prisma.deleteManyOrganizations({ createdAt_lte: new Date() });
+    await prisma.deleteManyOwners({ createdAt_lte: new Date() });
+    await prisma.deleteManyRepositories({ createdAt_lte: new Date() });
+    await prisma.deleteManyUsers({ createdAt_lte: new Date() });
+
     console.log(options.repositories);
     let repo: Repository;
     for (let repo of options.repositories) {
@@ -118,6 +132,7 @@ gulp.task('github/test', async () => {
                         messageHeadline
                         message
                         tarballUrl
+                        committedDate
                         author {
                           name
                           email
@@ -149,7 +164,75 @@ gulp.task('github/test', async () => {
         }
       );
 
-      console.log(hashes);
+      const commitsCreate: CommitCreateManyInput = result.data.repository.ref.target.history.edges.map(
+        ({ node }: any) => {
+          return {
+            hash: node.hash,
+            committedDate: node.committedDate,
+            message: node.message,
+            messageHeadline: node.messageHeadline,
+            author: {
+              create: {
+                email: node.author.email,
+                name: node.author.name,
+                // TODO: Fix proper handle
+                handle: node.author.name
+              }
+            }
+          };
+        }
+      );
+
+      const commitsUpsert: CommitUpsertWithWhereUniqueNestedInput = result.data.repository.ref.target.history.edges.map(
+        ({ node }: any) => {
+          const authorUpsert: UserUpsertWithWhereUniqueNestedInput = {
+            where: { email: node.author.email },
+            create: {
+              email: node.author.email,
+              name: node.author.name,
+              // TODO: Fix proper handle
+              handle: node.author.name
+            },
+            update: {
+              email: node.author.email,
+              name: node.author.name,
+              // TODO: Fix proper handle
+              handle: node.author.name
+            }
+          };
+          return {
+            where: {
+              hash: node.hash,
+              committedDate: node.committedDate,
+              message: node.message,
+              messageHeadline: node.messageHeadline,
+              author: {
+                userUpsert: authorUpsert
+              }
+            }
+          };
+        }
+      );
+
+      const output = await prisma.upsertRepository({
+        where: { id: '123123' },
+        create: {
+          name: repo.name,
+          owner: { create: { handle: repo.owner } },
+          service: 'GitHub',
+          commits: commitsCreate
+        },
+        update: {
+          name: repo.name,
+          owner: { create: { handle: repo.owner } },
+          service: 'GitHub',
+          commits: {
+            upsert: commitsUpsert
+          }
+        }
+      });
+
+      console.log(output);
 
       // const { repository } = await graphql(
       //   `
