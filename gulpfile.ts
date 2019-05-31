@@ -61,6 +61,8 @@ import {
   UserUpsertWithWhereUniqueNestedInput
 } from './prisma/generated/client';
 
+import { resolvers } from './prisma/resolvers';
+
 // import { createHttpLink } from 'apollo-link-http';
 //
 // const link = createHttpLink({ uri: '/graphql', fetch: fetch });
@@ -106,6 +108,8 @@ gulp.task('github/test', async () => {
     await prisma.deleteManyOwners({ createdAt_lte: new Date() });
     await prisma.deleteManyRepositories({ createdAt_lte: new Date() });
     await prisma.deleteManyUsers({ createdAt_lte: new Date() });
+
+    resolvers.Query.commit({ args: { hash: 'asdasd' } });
 
     console.log(options.repositories);
     let repo: Repository;

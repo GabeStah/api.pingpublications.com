@@ -1,10 +1,11 @@
 endpoint: http://localhost:4466
-databaseType: relational
+#databaseType: relational
 
 datamodel:
   - schema/commit.prisma
   - schema/organization.prisma
   - schema/owner.prisma
+  - schema/post.prisma
   - schema/repository.prisma
   - schema/user.prisma
 
@@ -18,8 +19,6 @@ secret: ${env:PRISMA_SECRET}
 
 generate:
   - generator: typescript-client
-    output: ./generated/client/
-  - generator:
     output: ./generated/client/
 
 # Seeds initial data into the database by running a script.

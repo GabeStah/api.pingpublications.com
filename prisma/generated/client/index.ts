@@ -19,6 +19,7 @@ export interface Exists {
   commit: (where?: CommitWhereInput) => Promise<boolean>;
   organization: (where?: OrganizationWhereInput) => Promise<boolean>;
   owner: (where?: OwnerWhereInput) => Promise<boolean>;
+  post: (where?: PostWhereInput) => Promise<boolean>;
   repository: (where?: RepositoryWhereInput) => Promise<boolean>;
   user: (where?: UserWhereInput) => Promise<boolean>;
 }
@@ -101,6 +102,25 @@ export interface Prisma {
     first?: Int;
     last?: Int;
   }) => OwnerConnectionPromise;
+  post: (where: PostWhereUniqueInput) => PostNullablePromise;
+  posts: (args?: {
+    where?: PostWhereInput;
+    orderBy?: PostOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => FragmentableArray<Post>;
+  postsConnection: (args?: {
+    where?: PostWhereInput;
+    orderBy?: PostOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => PostConnectionPromise;
   repository: (where: RepositoryWhereUniqueInput) => RepositoryNullablePromise;
   repositories: (args?: {
     where?: RepositoryWhereInput;
@@ -197,6 +217,22 @@ export interface Prisma {
   }) => OwnerPromise;
   deleteOwner: (where: OwnerWhereUniqueInput) => OwnerPromise;
   deleteManyOwners: (where?: OwnerWhereInput) => BatchPayloadPromise;
+  createPost: (data: PostCreateInput) => PostPromise;
+  updatePost: (args: {
+    data: PostUpdateInput;
+    where: PostWhereUniqueInput;
+  }) => PostPromise;
+  updateManyPosts: (args: {
+    data: PostUpdateManyMutationInput;
+    where?: PostWhereInput;
+  }) => BatchPayloadPromise;
+  upsertPost: (args: {
+    where: PostWhereUniqueInput;
+    create: PostCreateInput;
+    update: PostUpdateInput;
+  }) => PostPromise;
+  deletePost: (where: PostWhereUniqueInput) => PostPromise;
+  deleteManyPosts: (where?: PostWhereInput) => BatchPayloadPromise;
   createRepository: (data: RepositoryCreateInput) => RepositoryPromise;
   updateRepository: (args: {
     data: RepositoryUpdateInput;
@@ -247,6 +283,9 @@ export interface Subscription {
   owner: (
     where?: OwnerSubscriptionWhereInput
   ) => OwnerSubscriptionPayloadSubscription;
+  post: (
+    where?: PostSubscriptionWhereInput
+  ) => PostSubscriptionPayloadSubscription;
   repository: (
     where?: RepositorySubscriptionWhereInput
   ) => RepositorySubscriptionPayloadSubscription;
@@ -262,8 +301,6 @@ export interface ClientConstructor<T> {
 /**
  * Types
  */
-
-export type CommitStatus = 'Pending' | 'Processed';
 
 export type CommitOrderByInput =
   | 'id_ASC'
@@ -283,7 +320,19 @@ export type CommitOrderByInput =
   | 'status_ASC'
   | 'status_DESC';
 
+export type CommitStatus = 'Pending' | 'Processed';
+
 export type OrganizationOrderByInput =
+  | 'id_ASC'
+  | 'id_DESC'
+  | 'createdAt_ASC'
+  | 'createdAt_DESC'
+  | 'updatedAt_ASC'
+  | 'updatedAt_DESC'
+  | 'handle_ASC'
+  | 'handle_DESC';
+
+export type OwnerOrderByInput =
   | 'id_ASC'
   | 'id_DESC'
   | 'createdAt_ASC'
@@ -307,15 +356,19 @@ export type UserOrderByInput =
   | 'handle_ASC'
   | 'handle_DESC';
 
-export type OwnerOrderByInput =
+export type PostOrderByInput =
   | 'id_ASC'
   | 'id_DESC'
   | 'createdAt_ASC'
   | 'createdAt_DESC'
   | 'updatedAt_ASC'
   | 'updatedAt_DESC'
-  | 'handle_ASC'
-  | 'handle_DESC';
+  | 'published_ASC'
+  | 'published_DESC'
+  | 'title_ASC'
+  | 'title_DESC'
+  | 'content_ASC'
+  | 'content_DESC';
 
 export type RepositoryServiceType = 'GitHub' | 'GitLab' | 'Bitbucket';
 
@@ -333,24 +386,9 @@ export type RepositoryOrderByInput =
 
 export type MutationType = 'CREATED' | 'UPDATED' | 'DELETED';
 
-export interface UserUpdateManyInput {
-  create?: Maybe<UserCreateInput[] | UserCreateInput>;
-  update?: Maybe<
-    | UserUpdateWithWhereUniqueNestedInput[]
-    | UserUpdateWithWhereUniqueNestedInput
-  >;
-  upsert?: Maybe<
-    | UserUpsertWithWhereUniqueNestedInput[]
-    | UserUpsertWithWhereUniqueNestedInput
-  >;
-  delete?: Maybe<UserWhereUniqueInput[] | UserWhereUniqueInput>;
-  connect?: Maybe<UserWhereUniqueInput[] | UserWhereUniqueInput>;
-  set?: Maybe<UserWhereUniqueInput[] | UserWhereUniqueInput>;
-  disconnect?: Maybe<UserWhereUniqueInput[] | UserWhereUniqueInput>;
-  deleteMany?: Maybe<UserScalarWhereInput[] | UserScalarWhereInput>;
-  updateMany?: Maybe<
-    UserUpdateManyWithWhereNestedInput[] | UserUpdateManyWithWhereNestedInput
-  >;
+export interface UserUpdateWithWhereUniqueNestedInput {
+  where: UserWhereUniqueInput;
+  data: UserUpdateDataInput;
 }
 
 export type CommitWhereUniqueInput = AtLeastOne<{
@@ -358,9 +396,12 @@ export type CommitWhereUniqueInput = AtLeastOne<{
   hash?: Maybe<String>;
 }>;
 
-export interface UserUpdateManyWithWhereNestedInput {
-  where: UserScalarWhereInput;
-  data: UserUpdateManyDataInput;
+export interface CommitUpdateManyMutationInput {
+  committedDate?: Maybe<DateTimeInput>;
+  hash?: Maybe<String>;
+  message?: Maybe<String>;
+  messageHeadline?: Maybe<String>;
+  status?: Maybe<CommitStatus>;
 }
 
 export interface CommitWhereInput {
@@ -456,31 +497,22 @@ export interface CommitWhereInput {
   NOT?: Maybe<CommitWhereInput[] | CommitWhereInput>;
 }
 
-export interface OwnerUpsertNestedInput {
-  update: OwnerUpdateDataInput;
-  create: OwnerCreateInput;
-}
-
-export interface OrganizationUpdateInput {
-  users?: Maybe<UserUpdateManyInput>;
-  handle?: Maybe<String>;
-}
-
-export interface OwnerUpdateDataInput {
-  handle?: Maybe<String>;
-}
-
-export interface UserUpdateManyDataInput {
-  email?: Maybe<String>;
-  name?: Maybe<String>;
-  handle?: Maybe<String>;
-}
-
 export interface OwnerUpdateOneRequiredInput {
   create?: Maybe<OwnerCreateInput>;
   update?: Maybe<OwnerUpdateDataInput>;
   upsert?: Maybe<OwnerUpsertNestedInput>;
   connect?: Maybe<OwnerWhereUniqueInput>;
+}
+
+export interface OwnerUpdateManyMutationInput {
+  handle?: Maybe<String>;
+}
+
+export interface RepositoryUpdateInput {
+  name?: Maybe<String>;
+  owner?: Maybe<OwnerUpdateOneRequiredInput>;
+  service?: Maybe<RepositoryServiceType>;
+  commits?: Maybe<CommitUpdateManyInput>;
 }
 
 export interface RepositorySubscriptionWhereInput {
@@ -500,25 +532,75 @@ export interface RepositorySubscriptionWhereInput {
   >;
 }
 
+export interface CommitCreateManyInput {
+  create?: Maybe<CommitCreateInput[] | CommitCreateInput>;
+  connect?: Maybe<CommitWhereUniqueInput[] | CommitWhereUniqueInput>;
+}
+
+export interface PostSubscriptionWhereInput {
+  mutation_in?: Maybe<MutationType[] | MutationType>;
+  updatedFields_contains?: Maybe<String>;
+  updatedFields_contains_every?: Maybe<String[] | String>;
+  updatedFields_contains_some?: Maybe<String[] | String>;
+  node?: Maybe<PostWhereInput>;
+  AND?: Maybe<PostSubscriptionWhereInput[] | PostSubscriptionWhereInput>;
+  OR?: Maybe<PostSubscriptionWhereInput[] | PostSubscriptionWhereInput>;
+  NOT?: Maybe<PostSubscriptionWhereInput[] | PostSubscriptionWhereInput>;
+}
+
+export interface OwnerCreateOneInput {
+  create?: Maybe<OwnerCreateInput>;
+  connect?: Maybe<OwnerWhereUniqueInput>;
+}
+
+export interface OwnerSubscriptionWhereInput {
+  mutation_in?: Maybe<MutationType[] | MutationType>;
+  updatedFields_contains?: Maybe<String>;
+  updatedFields_contains_every?: Maybe<String[] | String>;
+  updatedFields_contains_some?: Maybe<String[] | String>;
+  node?: Maybe<OwnerWhereInput>;
+  AND?: Maybe<OwnerSubscriptionWhereInput[] | OwnerSubscriptionWhereInput>;
+  OR?: Maybe<OwnerSubscriptionWhereInput[] | OwnerSubscriptionWhereInput>;
+  NOT?: Maybe<OwnerSubscriptionWhereInput[] | OwnerSubscriptionWhereInput>;
+}
+
 export type UserWhereUniqueInput = AtLeastOne<{
   id: Maybe<ID_Input>;
   email?: Maybe<String>;
   handle?: Maybe<String>;
 }>;
 
-export type OrganizationWhereUniqueInput = AtLeastOne<{
+export interface CommitSubscriptionWhereInput {
+  mutation_in?: Maybe<MutationType[] | MutationType>;
+  updatedFields_contains?: Maybe<String>;
+  updatedFields_contains_every?: Maybe<String[] | String>;
+  updatedFields_contains_some?: Maybe<String[] | String>;
+  node?: Maybe<CommitWhereInput>;
+  AND?: Maybe<CommitSubscriptionWhereInput[] | CommitSubscriptionWhereInput>;
+  OR?: Maybe<CommitSubscriptionWhereInput[] | CommitSubscriptionWhereInput>;
+  NOT?: Maybe<CommitSubscriptionWhereInput[] | CommitSubscriptionWhereInput>;
+}
+
+export interface RepositoryCreateInput {
+  id?: Maybe<ID_Input>;
+  name: String;
+  owner: OwnerCreateOneInput;
+  service?: Maybe<RepositoryServiceType>;
+  commits?: Maybe<CommitCreateManyInput>;
+}
+
+export type OwnerWhereUniqueInput = AtLeastOne<{
   id: Maybe<ID_Input>;
   handle?: Maybe<String>;
 }>;
 
-export interface RepositoryUpdateInput {
-  name?: Maybe<String>;
-  owner?: Maybe<OwnerUpdateOneRequiredInput>;
-  service?: Maybe<RepositoryServiceType>;
-  commits?: Maybe<CommitUpdateManyInput>;
+export interface PostUpdateManyMutationInput {
+  published?: Maybe<Boolean>;
+  title?: Maybe<String>;
+  content?: Maybe<String>;
 }
 
-export interface OrganizationWhereInput {
+export interface OwnerWhereInput {
   id?: Maybe<ID_Input>;
   id_not?: Maybe<ID_Input>;
   id_in?: Maybe<ID_Input[] | ID_Input>;
@@ -549,9 +631,6 @@ export interface OrganizationWhereInput {
   updatedAt_lte?: Maybe<DateTimeInput>;
   updatedAt_gt?: Maybe<DateTimeInput>;
   updatedAt_gte?: Maybe<DateTimeInput>;
-  users_every?: Maybe<UserWhereInput>;
-  users_some?: Maybe<UserWhereInput>;
-  users_none?: Maybe<UserWhereInput>;
   handle?: Maybe<String>;
   handle_not?: Maybe<String>;
   handle_in?: Maybe<String[] | String>;
@@ -566,30 +645,14 @@ export interface OrganizationWhereInput {
   handle_not_starts_with?: Maybe<String>;
   handle_ends_with?: Maybe<String>;
   handle_not_ends_with?: Maybe<String>;
-  AND?: Maybe<OrganizationWhereInput[] | OrganizationWhereInput>;
-  OR?: Maybe<OrganizationWhereInput[] | OrganizationWhereInput>;
-  NOT?: Maybe<OrganizationWhereInput[] | OrganizationWhereInput>;
+  AND?: Maybe<OwnerWhereInput[] | OwnerWhereInput>;
+  OR?: Maybe<OwnerWhereInput[] | OwnerWhereInput>;
+  NOT?: Maybe<OwnerWhereInput[] | OwnerWhereInput>;
 }
 
-export interface CommitCreateManyInput {
-  create?: Maybe<CommitCreateInput[] | CommitCreateInput>;
-  connect?: Maybe<CommitWhereUniqueInput[] | CommitWhereUniqueInput>;
-}
-
-export interface UserUpdateManyMutationInput {
-  email?: Maybe<String>;
-  name?: Maybe<String>;
-  handle?: Maybe<String>;
-}
-
-export interface OwnerCreateOneInput {
-  create?: Maybe<OwnerCreateInput>;
-  connect?: Maybe<OwnerWhereUniqueInput>;
-}
-
-export interface RepositoryUpdateManyMutationInput {
-  name?: Maybe<String>;
-  service?: Maybe<RepositoryServiceType>;
+export interface UserUpsertNestedInput {
+  update: UserUpdateDataInput;
+  create: UserCreateInput;
 }
 
 export interface CommitUpdateManyDataInput {
@@ -600,82 +663,12 @@ export interface CommitUpdateManyDataInput {
   status?: Maybe<CommitStatus>;
 }
 
-export interface UserWhereInput {
-  id?: Maybe<ID_Input>;
-  id_not?: Maybe<ID_Input>;
-  id_in?: Maybe<ID_Input[] | ID_Input>;
-  id_not_in?: Maybe<ID_Input[] | ID_Input>;
-  id_lt?: Maybe<ID_Input>;
-  id_lte?: Maybe<ID_Input>;
-  id_gt?: Maybe<ID_Input>;
-  id_gte?: Maybe<ID_Input>;
-  id_contains?: Maybe<ID_Input>;
-  id_not_contains?: Maybe<ID_Input>;
-  id_starts_with?: Maybe<ID_Input>;
-  id_not_starts_with?: Maybe<ID_Input>;
-  id_ends_with?: Maybe<ID_Input>;
-  id_not_ends_with?: Maybe<ID_Input>;
-  createdAt?: Maybe<DateTimeInput>;
-  createdAt_not?: Maybe<DateTimeInput>;
-  createdAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
-  createdAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
-  createdAt_lt?: Maybe<DateTimeInput>;
-  createdAt_lte?: Maybe<DateTimeInput>;
-  createdAt_gt?: Maybe<DateTimeInput>;
-  createdAt_gte?: Maybe<DateTimeInput>;
-  updatedAt?: Maybe<DateTimeInput>;
-  updatedAt_not?: Maybe<DateTimeInput>;
-  updatedAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
-  updatedAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
-  updatedAt_lt?: Maybe<DateTimeInput>;
-  updatedAt_lte?: Maybe<DateTimeInput>;
-  updatedAt_gt?: Maybe<DateTimeInput>;
-  updatedAt_gte?: Maybe<DateTimeInput>;
-  email?: Maybe<String>;
-  email_not?: Maybe<String>;
-  email_in?: Maybe<String[] | String>;
-  email_not_in?: Maybe<String[] | String>;
-  email_lt?: Maybe<String>;
-  email_lte?: Maybe<String>;
-  email_gt?: Maybe<String>;
-  email_gte?: Maybe<String>;
-  email_contains?: Maybe<String>;
-  email_not_contains?: Maybe<String>;
-  email_starts_with?: Maybe<String>;
-  email_not_starts_with?: Maybe<String>;
-  email_ends_with?: Maybe<String>;
-  email_not_ends_with?: Maybe<String>;
-  name?: Maybe<String>;
-  name_not?: Maybe<String>;
-  name_in?: Maybe<String[] | String>;
-  name_not_in?: Maybe<String[] | String>;
-  name_lt?: Maybe<String>;
-  name_lte?: Maybe<String>;
-  name_gt?: Maybe<String>;
-  name_gte?: Maybe<String>;
-  name_contains?: Maybe<String>;
-  name_not_contains?: Maybe<String>;
-  name_starts_with?: Maybe<String>;
-  name_not_starts_with?: Maybe<String>;
-  name_ends_with?: Maybe<String>;
-  name_not_ends_with?: Maybe<String>;
+export type PostWhereUniqueInput = AtLeastOne<{
+  id: Maybe<ID_Input>;
+}>;
+
+export interface OwnerUpdateInput {
   handle?: Maybe<String>;
-  handle_not?: Maybe<String>;
-  handle_in?: Maybe<String[] | String>;
-  handle_not_in?: Maybe<String[] | String>;
-  handle_lt?: Maybe<String>;
-  handle_lte?: Maybe<String>;
-  handle_gt?: Maybe<String>;
-  handle_gte?: Maybe<String>;
-  handle_contains?: Maybe<String>;
-  handle_not_contains?: Maybe<String>;
-  handle_starts_with?: Maybe<String>;
-  handle_not_starts_with?: Maybe<String>;
-  handle_ends_with?: Maybe<String>;
-  handle_not_ends_with?: Maybe<String>;
-  AND?: Maybe<UserWhereInput[] | UserWhereInput>;
-  OR?: Maybe<UserWhereInput[] | UserWhereInput>;
-  NOT?: Maybe<UserWhereInput[] | UserWhereInput>;
 }
 
 export interface CommitCreateInput {
@@ -783,9 +776,72 @@ export interface UserCreateManyInput {
   connect?: Maybe<UserWhereUniqueInput[] | UserWhereUniqueInput>;
 }
 
-export type RepositoryWhereUniqueInput = AtLeastOne<{
-  id: Maybe<ID_Input>;
-}>;
+export interface PostWhereInput {
+  id?: Maybe<ID_Input>;
+  id_not?: Maybe<ID_Input>;
+  id_in?: Maybe<ID_Input[] | ID_Input>;
+  id_not_in?: Maybe<ID_Input[] | ID_Input>;
+  id_lt?: Maybe<ID_Input>;
+  id_lte?: Maybe<ID_Input>;
+  id_gt?: Maybe<ID_Input>;
+  id_gte?: Maybe<ID_Input>;
+  id_contains?: Maybe<ID_Input>;
+  id_not_contains?: Maybe<ID_Input>;
+  id_starts_with?: Maybe<ID_Input>;
+  id_not_starts_with?: Maybe<ID_Input>;
+  id_ends_with?: Maybe<ID_Input>;
+  id_not_ends_with?: Maybe<ID_Input>;
+  createdAt?: Maybe<DateTimeInput>;
+  createdAt_not?: Maybe<DateTimeInput>;
+  createdAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  createdAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  createdAt_lt?: Maybe<DateTimeInput>;
+  createdAt_lte?: Maybe<DateTimeInput>;
+  createdAt_gt?: Maybe<DateTimeInput>;
+  createdAt_gte?: Maybe<DateTimeInput>;
+  updatedAt?: Maybe<DateTimeInput>;
+  updatedAt_not?: Maybe<DateTimeInput>;
+  updatedAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  updatedAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  updatedAt_lt?: Maybe<DateTimeInput>;
+  updatedAt_lte?: Maybe<DateTimeInput>;
+  updatedAt_gt?: Maybe<DateTimeInput>;
+  updatedAt_gte?: Maybe<DateTimeInput>;
+  published?: Maybe<Boolean>;
+  published_not?: Maybe<Boolean>;
+  title?: Maybe<String>;
+  title_not?: Maybe<String>;
+  title_in?: Maybe<String[] | String>;
+  title_not_in?: Maybe<String[] | String>;
+  title_lt?: Maybe<String>;
+  title_lte?: Maybe<String>;
+  title_gt?: Maybe<String>;
+  title_gte?: Maybe<String>;
+  title_contains?: Maybe<String>;
+  title_not_contains?: Maybe<String>;
+  title_starts_with?: Maybe<String>;
+  title_not_starts_with?: Maybe<String>;
+  title_ends_with?: Maybe<String>;
+  title_not_ends_with?: Maybe<String>;
+  content?: Maybe<String>;
+  content_not?: Maybe<String>;
+  content_in?: Maybe<String[] | String>;
+  content_not_in?: Maybe<String[] | String>;
+  content_lt?: Maybe<String>;
+  content_lte?: Maybe<String>;
+  content_gt?: Maybe<String>;
+  content_gte?: Maybe<String>;
+  content_contains?: Maybe<String>;
+  content_not_contains?: Maybe<String>;
+  content_starts_with?: Maybe<String>;
+  content_not_starts_with?: Maybe<String>;
+  content_ends_with?: Maybe<String>;
+  content_not_ends_with?: Maybe<String>;
+  author?: Maybe<UserWhereInput>;
+  AND?: Maybe<PostWhereInput[] | PostWhereInput>;
+  OR?: Maybe<PostWhereInput[] | PostWhereInput>;
+  NOT?: Maybe<PostWhereInput[] | PostWhereInput>;
+}
 
 export interface UserCreateInput {
   id?: Maybe<ID_Input>;
@@ -794,9 +850,13 @@ export interface UserCreateInput {
   handle: String;
 }
 
-export interface CommitUpdateWithWhereUniqueNestedInput {
-  where: CommitWhereUniqueInput;
-  data: CommitUpdateDataInput;
+export interface CommitUpdateDataInput {
+  author?: Maybe<UserUpdateManyInput>;
+  committedDate?: Maybe<DateTimeInput>;
+  hash?: Maybe<String>;
+  message?: Maybe<String>;
+  messageHeadline?: Maybe<String>;
+  status?: Maybe<CommitStatus>;
 }
 
 export interface CommitUpdateInput {
@@ -829,39 +889,94 @@ export interface CommitUpdateManyInput {
   >;
 }
 
-export interface RepositoryCreateInput {
+export interface UserUpdateManyInput {
+  create?: Maybe<UserCreateInput[] | UserCreateInput>;
+  update?: Maybe<
+    | UserUpdateWithWhereUniqueNestedInput[]
+    | UserUpdateWithWhereUniqueNestedInput
+  >;
+  upsert?: Maybe<
+    | UserUpsertWithWhereUniqueNestedInput[]
+    | UserUpsertWithWhereUniqueNestedInput
+  >;
+  delete?: Maybe<UserWhereUniqueInput[] | UserWhereUniqueInput>;
+  connect?: Maybe<UserWhereUniqueInput[] | UserWhereUniqueInput>;
+  set?: Maybe<UserWhereUniqueInput[] | UserWhereUniqueInput>;
+  disconnect?: Maybe<UserWhereUniqueInput[] | UserWhereUniqueInput>;
+  deleteMany?: Maybe<UserScalarWhereInput[] | UserScalarWhereInput>;
+  updateMany?: Maybe<
+    UserUpdateManyWithWhereNestedInput[] | UserUpdateManyWithWhereNestedInput
+  >;
+}
+
+export interface OwnerUpsertNestedInput {
+  update: OwnerUpdateDataInput;
+  create: OwnerCreateInput;
+}
+
+export interface UserUpdateOneRequiredInput {
+  create?: Maybe<UserCreateInput>;
+  update?: Maybe<UserUpdateDataInput>;
+  upsert?: Maybe<UserUpsertNestedInput>;
+  connect?: Maybe<UserWhereUniqueInput>;
+}
+
+export interface RepositoryWhereInput {
   id?: Maybe<ID_Input>;
-  name: String;
-  owner: OwnerCreateOneInput;
+  id_not?: Maybe<ID_Input>;
+  id_in?: Maybe<ID_Input[] | ID_Input>;
+  id_not_in?: Maybe<ID_Input[] | ID_Input>;
+  id_lt?: Maybe<ID_Input>;
+  id_lte?: Maybe<ID_Input>;
+  id_gt?: Maybe<ID_Input>;
+  id_gte?: Maybe<ID_Input>;
+  id_contains?: Maybe<ID_Input>;
+  id_not_contains?: Maybe<ID_Input>;
+  id_starts_with?: Maybe<ID_Input>;
+  id_not_starts_with?: Maybe<ID_Input>;
+  id_ends_with?: Maybe<ID_Input>;
+  id_not_ends_with?: Maybe<ID_Input>;
+  createdAt?: Maybe<DateTimeInput>;
+  createdAt_not?: Maybe<DateTimeInput>;
+  createdAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  createdAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  createdAt_lt?: Maybe<DateTimeInput>;
+  createdAt_lte?: Maybe<DateTimeInput>;
+  createdAt_gt?: Maybe<DateTimeInput>;
+  createdAt_gte?: Maybe<DateTimeInput>;
+  updatedAt?: Maybe<DateTimeInput>;
+  updatedAt_not?: Maybe<DateTimeInput>;
+  updatedAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  updatedAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  updatedAt_lt?: Maybe<DateTimeInput>;
+  updatedAt_lte?: Maybe<DateTimeInput>;
+  updatedAt_gt?: Maybe<DateTimeInput>;
+  updatedAt_gte?: Maybe<DateTimeInput>;
+  name?: Maybe<String>;
+  name_not?: Maybe<String>;
+  name_in?: Maybe<String[] | String>;
+  name_not_in?: Maybe<String[] | String>;
+  name_lt?: Maybe<String>;
+  name_lte?: Maybe<String>;
+  name_gt?: Maybe<String>;
+  name_gte?: Maybe<String>;
+  name_contains?: Maybe<String>;
+  name_not_contains?: Maybe<String>;
+  name_starts_with?: Maybe<String>;
+  name_not_starts_with?: Maybe<String>;
+  name_ends_with?: Maybe<String>;
+  name_not_ends_with?: Maybe<String>;
+  owner?: Maybe<OwnerWhereInput>;
   service?: Maybe<RepositoryServiceType>;
-  commits?: Maybe<CommitCreateManyInput>;
-}
-
-export interface OwnerSubscriptionWhereInput {
-  mutation_in?: Maybe<MutationType[] | MutationType>;
-  updatedFields_contains?: Maybe<String>;
-  updatedFields_contains_every?: Maybe<String[] | String>;
-  updatedFields_contains_some?: Maybe<String[] | String>;
-  node?: Maybe<OwnerWhereInput>;
-  AND?: Maybe<OwnerSubscriptionWhereInput[] | OwnerSubscriptionWhereInput>;
-  OR?: Maybe<OwnerSubscriptionWhereInput[] | OwnerSubscriptionWhereInput>;
-  NOT?: Maybe<OwnerSubscriptionWhereInput[] | OwnerSubscriptionWhereInput>;
-}
-
-export interface UserUpdateWithWhereUniqueNestedInput {
-  where: UserWhereUniqueInput;
-  data: UserUpdateDataInput;
-}
-
-export interface CommitSubscriptionWhereInput {
-  mutation_in?: Maybe<MutationType[] | MutationType>;
-  updatedFields_contains?: Maybe<String>;
-  updatedFields_contains_every?: Maybe<String[] | String>;
-  updatedFields_contains_some?: Maybe<String[] | String>;
-  node?: Maybe<CommitWhereInput>;
-  AND?: Maybe<CommitSubscriptionWhereInput[] | CommitSubscriptionWhereInput>;
-  OR?: Maybe<CommitSubscriptionWhereInput[] | CommitSubscriptionWhereInput>;
-  NOT?: Maybe<CommitSubscriptionWhereInput[] | CommitSubscriptionWhereInput>;
+  service_not?: Maybe<RepositoryServiceType>;
+  service_in?: Maybe<RepositoryServiceType[] | RepositoryServiceType>;
+  service_not_in?: Maybe<RepositoryServiceType[] | RepositoryServiceType>;
+  commits_every?: Maybe<CommitWhereInput>;
+  commits_some?: Maybe<CommitWhereInput>;
+  commits_none?: Maybe<CommitWhereInput>;
+  AND?: Maybe<RepositoryWhereInput[] | RepositoryWhereInput>;
+  OR?: Maybe<RepositoryWhereInput[] | RepositoryWhereInput>;
+  NOT?: Maybe<RepositoryWhereInput[] | RepositoryWhereInput>;
 }
 
 export interface UserUpdateDataInput {
@@ -870,7 +985,7 @@ export interface UserUpdateDataInput {
   handle?: Maybe<String>;
 }
 
-export type OwnerWhereUniqueInput = AtLeastOne<{
+export type OrganizationWhereUniqueInput = AtLeastOne<{
   id: Maybe<ID_Input>;
   handle?: Maybe<String>;
 }>;
@@ -881,9 +996,21 @@ export interface UserUpsertWithWhereUniqueNestedInput {
   create: UserCreateInput;
 }
 
-export interface CommitUpdateManyWithWhereNestedInput {
-  where: CommitScalarWhereInput;
-  data: CommitUpdateManyDataInput;
+export interface OrganizationSubscriptionWhereInput {
+  mutation_in?: Maybe<MutationType[] | MutationType>;
+  updatedFields_contains?: Maybe<String>;
+  updatedFields_contains_every?: Maybe<String[] | String>;
+  updatedFields_contains_some?: Maybe<String[] | String>;
+  node?: Maybe<OrganizationWhereInput>;
+  AND?: Maybe<
+    OrganizationSubscriptionWhereInput[] | OrganizationSubscriptionWhereInput
+  >;
+  OR?: Maybe<
+    OrganizationSubscriptionWhereInput[] | OrganizationSubscriptionWhereInput
+  >;
+  NOT?: Maybe<
+    OrganizationSubscriptionWhereInput[] | OrganizationSubscriptionWhereInput
+  >;
 }
 
 export interface UserScalarWhereInput {
@@ -964,64 +1091,29 @@ export interface UserScalarWhereInput {
   NOT?: Maybe<UserScalarWhereInput[] | UserScalarWhereInput>;
 }
 
-export interface CommitUpdateDataInput {
-  author?: Maybe<UserUpdateManyInput>;
-  committedDate?: Maybe<DateTimeInput>;
-  hash?: Maybe<String>;
-  message?: Maybe<String>;
-  messageHeadline?: Maybe<String>;
-  status?: Maybe<CommitStatus>;
-}
-
-export interface OwnerUpdateManyMutationInput {
-  handle?: Maybe<String>;
-}
-
-export interface UserSubscriptionWhereInput {
-  mutation_in?: Maybe<MutationType[] | MutationType>;
-  updatedFields_contains?: Maybe<String>;
-  updatedFields_contains_every?: Maybe<String[] | String>;
-  updatedFields_contains_some?: Maybe<String[] | String>;
-  node?: Maybe<UserWhereInput>;
-  AND?: Maybe<UserSubscriptionWhereInput[] | UserSubscriptionWhereInput>;
-  OR?: Maybe<UserSubscriptionWhereInput[] | UserSubscriptionWhereInput>;
-  NOT?: Maybe<UserSubscriptionWhereInput[] | UserSubscriptionWhereInput>;
-}
-
-export interface OwnerUpdateInput {
-  handle?: Maybe<String>;
-}
-
 export interface UserUpdateInput {
   email?: Maybe<String>;
   name?: Maybe<String>;
   handle?: Maybe<String>;
 }
 
-export interface OrganizationCreateInput {
-  id?: Maybe<ID_Input>;
-  users?: Maybe<UserCreateManyInput>;
-  handle: String;
+export interface UserUpdateManyWithWhereNestedInput {
+  where: UserScalarWhereInput;
+  data: UserUpdateManyDataInput;
 }
 
-export interface OrganizationUpdateManyMutationInput {
+export interface CommitUpdateManyWithWhereNestedInput {
+  where: CommitScalarWhereInput;
+  data: CommitUpdateManyDataInput;
+}
+
+export interface UserUpdateManyDataInput {
+  email?: Maybe<String>;
+  name?: Maybe<String>;
   handle?: Maybe<String>;
 }
 
-export interface OwnerCreateInput {
-  id?: Maybe<ID_Input>;
-  handle: String;
-}
-
-export interface CommitUpdateManyMutationInput {
-  committedDate?: Maybe<DateTimeInput>;
-  hash?: Maybe<String>;
-  message?: Maybe<String>;
-  messageHeadline?: Maybe<String>;
-  status?: Maybe<CommitStatus>;
-}
-
-export interface OwnerWhereInput {
+export interface UserWhereInput {
   id?: Maybe<ID_Input>;
   id_not?: Maybe<ID_Input>;
   id_in?: Maybe<ID_Input[] | ID_Input>;
@@ -1052,73 +1144,20 @@ export interface OwnerWhereInput {
   updatedAt_lte?: Maybe<DateTimeInput>;
   updatedAt_gt?: Maybe<DateTimeInput>;
   updatedAt_gte?: Maybe<DateTimeInput>;
-  handle?: Maybe<String>;
-  handle_not?: Maybe<String>;
-  handle_in?: Maybe<String[] | String>;
-  handle_not_in?: Maybe<String[] | String>;
-  handle_lt?: Maybe<String>;
-  handle_lte?: Maybe<String>;
-  handle_gt?: Maybe<String>;
-  handle_gte?: Maybe<String>;
-  handle_contains?: Maybe<String>;
-  handle_not_contains?: Maybe<String>;
-  handle_starts_with?: Maybe<String>;
-  handle_not_starts_with?: Maybe<String>;
-  handle_ends_with?: Maybe<String>;
-  handle_not_ends_with?: Maybe<String>;
-  AND?: Maybe<OwnerWhereInput[] | OwnerWhereInput>;
-  OR?: Maybe<OwnerWhereInput[] | OwnerWhereInput>;
-  NOT?: Maybe<OwnerWhereInput[] | OwnerWhereInput>;
-}
-
-export interface OrganizationSubscriptionWhereInput {
-  mutation_in?: Maybe<MutationType[] | MutationType>;
-  updatedFields_contains?: Maybe<String>;
-  updatedFields_contains_every?: Maybe<String[] | String>;
-  updatedFields_contains_some?: Maybe<String[] | String>;
-  node?: Maybe<OrganizationWhereInput>;
-  AND?: Maybe<
-    OrganizationSubscriptionWhereInput[] | OrganizationSubscriptionWhereInput
-  >;
-  OR?: Maybe<
-    OrganizationSubscriptionWhereInput[] | OrganizationSubscriptionWhereInput
-  >;
-  NOT?: Maybe<
-    OrganizationSubscriptionWhereInput[] | OrganizationSubscriptionWhereInput
-  >;
-}
-
-export interface RepositoryWhereInput {
-  id?: Maybe<ID_Input>;
-  id_not?: Maybe<ID_Input>;
-  id_in?: Maybe<ID_Input[] | ID_Input>;
-  id_not_in?: Maybe<ID_Input[] | ID_Input>;
-  id_lt?: Maybe<ID_Input>;
-  id_lte?: Maybe<ID_Input>;
-  id_gt?: Maybe<ID_Input>;
-  id_gte?: Maybe<ID_Input>;
-  id_contains?: Maybe<ID_Input>;
-  id_not_contains?: Maybe<ID_Input>;
-  id_starts_with?: Maybe<ID_Input>;
-  id_not_starts_with?: Maybe<ID_Input>;
-  id_ends_with?: Maybe<ID_Input>;
-  id_not_ends_with?: Maybe<ID_Input>;
-  createdAt?: Maybe<DateTimeInput>;
-  createdAt_not?: Maybe<DateTimeInput>;
-  createdAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
-  createdAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
-  createdAt_lt?: Maybe<DateTimeInput>;
-  createdAt_lte?: Maybe<DateTimeInput>;
-  createdAt_gt?: Maybe<DateTimeInput>;
-  createdAt_gte?: Maybe<DateTimeInput>;
-  updatedAt?: Maybe<DateTimeInput>;
-  updatedAt_not?: Maybe<DateTimeInput>;
-  updatedAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
-  updatedAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
-  updatedAt_lt?: Maybe<DateTimeInput>;
-  updatedAt_lte?: Maybe<DateTimeInput>;
-  updatedAt_gt?: Maybe<DateTimeInput>;
-  updatedAt_gte?: Maybe<DateTimeInput>;
+  email?: Maybe<String>;
+  email_not?: Maybe<String>;
+  email_in?: Maybe<String[] | String>;
+  email_not_in?: Maybe<String[] | String>;
+  email_lt?: Maybe<String>;
+  email_lte?: Maybe<String>;
+  email_gt?: Maybe<String>;
+  email_gte?: Maybe<String>;
+  email_contains?: Maybe<String>;
+  email_not_contains?: Maybe<String>;
+  email_starts_with?: Maybe<String>;
+  email_not_starts_with?: Maybe<String>;
+  email_ends_with?: Maybe<String>;
+  email_not_ends_with?: Maybe<String>;
   name?: Maybe<String>;
   name_not?: Maybe<String>;
   name_in?: Maybe<String[] | String>;
@@ -1133,17 +1172,64 @@ export interface RepositoryWhereInput {
   name_not_starts_with?: Maybe<String>;
   name_ends_with?: Maybe<String>;
   name_not_ends_with?: Maybe<String>;
-  owner?: Maybe<OwnerWhereInput>;
-  service?: Maybe<RepositoryServiceType>;
-  service_not?: Maybe<RepositoryServiceType>;
-  service_in?: Maybe<RepositoryServiceType[] | RepositoryServiceType>;
-  service_not_in?: Maybe<RepositoryServiceType[] | RepositoryServiceType>;
-  commits_every?: Maybe<CommitWhereInput>;
-  commits_some?: Maybe<CommitWhereInput>;
-  commits_none?: Maybe<CommitWhereInput>;
-  AND?: Maybe<RepositoryWhereInput[] | RepositoryWhereInput>;
-  OR?: Maybe<RepositoryWhereInput[] | RepositoryWhereInput>;
-  NOT?: Maybe<RepositoryWhereInput[] | RepositoryWhereInput>;
+  handle?: Maybe<String>;
+  handle_not?: Maybe<String>;
+  handle_in?: Maybe<String[] | String>;
+  handle_not_in?: Maybe<String[] | String>;
+  handle_lt?: Maybe<String>;
+  handle_lte?: Maybe<String>;
+  handle_gt?: Maybe<String>;
+  handle_gte?: Maybe<String>;
+  handle_contains?: Maybe<String>;
+  handle_not_contains?: Maybe<String>;
+  handle_starts_with?: Maybe<String>;
+  handle_not_starts_with?: Maybe<String>;
+  handle_ends_with?: Maybe<String>;
+  handle_not_ends_with?: Maybe<String>;
+  AND?: Maybe<UserWhereInput[] | UserWhereInput>;
+  OR?: Maybe<UserWhereInput[] | UserWhereInput>;
+  NOT?: Maybe<UserWhereInput[] | UserWhereInput>;
+}
+
+export interface PostUpdateInput {
+  published?: Maybe<Boolean>;
+  title?: Maybe<String>;
+  content?: Maybe<String>;
+  author?: Maybe<UserUpdateOneRequiredInput>;
+}
+
+export type RepositoryWhereUniqueInput = AtLeastOne<{
+  id: Maybe<ID_Input>;
+}>;
+
+export interface UserCreateOneInput {
+  create?: Maybe<UserCreateInput>;
+  connect?: Maybe<UserWhereUniqueInput>;
+}
+
+export interface UserSubscriptionWhereInput {
+  mutation_in?: Maybe<MutationType[] | MutationType>;
+  updatedFields_contains?: Maybe<String>;
+  updatedFields_contains_every?: Maybe<String[] | String>;
+  updatedFields_contains_some?: Maybe<String[] | String>;
+  node?: Maybe<UserWhereInput>;
+  AND?: Maybe<UserSubscriptionWhereInput[] | UserSubscriptionWhereInput>;
+  OR?: Maybe<UserSubscriptionWhereInput[] | UserSubscriptionWhereInput>;
+  NOT?: Maybe<UserSubscriptionWhereInput[] | UserSubscriptionWhereInput>;
+}
+
+export interface PostCreateInput {
+  id?: Maybe<ID_Input>;
+  published?: Maybe<Boolean>;
+  title: String;
+  content?: Maybe<String>;
+  author: UserCreateOneInput;
+}
+
+export interface UserUpdateManyMutationInput {
+  email?: Maybe<String>;
+  name?: Maybe<String>;
+  handle?: Maybe<String>;
 }
 
 export interface CommitUpsertWithWhereUniqueNestedInput {
@@ -1152,8 +1238,111 @@ export interface CommitUpsertWithWhereUniqueNestedInput {
   create: CommitCreateInput;
 }
 
+export interface OwnerCreateInput {
+  id?: Maybe<ID_Input>;
+  handle: String;
+}
+
+export interface OrganizationUpdateManyMutationInput {
+  handle?: Maybe<String>;
+}
+
+export interface OrganizationUpdateInput {
+  users?: Maybe<UserUpdateManyInput>;
+  handle?: Maybe<String>;
+}
+
+export interface OrganizationCreateInput {
+  id?: Maybe<ID_Input>;
+  users?: Maybe<UserCreateManyInput>;
+  handle: String;
+}
+
+export interface CommitUpdateWithWhereUniqueNestedInput {
+  where: CommitWhereUniqueInput;
+  data: CommitUpdateDataInput;
+}
+
+export interface RepositoryUpdateManyMutationInput {
+  name?: Maybe<String>;
+  service?: Maybe<RepositoryServiceType>;
+}
+
+export interface OrganizationWhereInput {
+  id?: Maybe<ID_Input>;
+  id_not?: Maybe<ID_Input>;
+  id_in?: Maybe<ID_Input[] | ID_Input>;
+  id_not_in?: Maybe<ID_Input[] | ID_Input>;
+  id_lt?: Maybe<ID_Input>;
+  id_lte?: Maybe<ID_Input>;
+  id_gt?: Maybe<ID_Input>;
+  id_gte?: Maybe<ID_Input>;
+  id_contains?: Maybe<ID_Input>;
+  id_not_contains?: Maybe<ID_Input>;
+  id_starts_with?: Maybe<ID_Input>;
+  id_not_starts_with?: Maybe<ID_Input>;
+  id_ends_with?: Maybe<ID_Input>;
+  id_not_ends_with?: Maybe<ID_Input>;
+  createdAt?: Maybe<DateTimeInput>;
+  createdAt_not?: Maybe<DateTimeInput>;
+  createdAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  createdAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  createdAt_lt?: Maybe<DateTimeInput>;
+  createdAt_lte?: Maybe<DateTimeInput>;
+  createdAt_gt?: Maybe<DateTimeInput>;
+  createdAt_gte?: Maybe<DateTimeInput>;
+  updatedAt?: Maybe<DateTimeInput>;
+  updatedAt_not?: Maybe<DateTimeInput>;
+  updatedAt_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  updatedAt_not_in?: Maybe<DateTimeInput[] | DateTimeInput>;
+  updatedAt_lt?: Maybe<DateTimeInput>;
+  updatedAt_lte?: Maybe<DateTimeInput>;
+  updatedAt_gt?: Maybe<DateTimeInput>;
+  updatedAt_gte?: Maybe<DateTimeInput>;
+  users_every?: Maybe<UserWhereInput>;
+  users_some?: Maybe<UserWhereInput>;
+  users_none?: Maybe<UserWhereInput>;
+  handle?: Maybe<String>;
+  handle_not?: Maybe<String>;
+  handle_in?: Maybe<String[] | String>;
+  handle_not_in?: Maybe<String[] | String>;
+  handle_lt?: Maybe<String>;
+  handle_lte?: Maybe<String>;
+  handle_gt?: Maybe<String>;
+  handle_gte?: Maybe<String>;
+  handle_contains?: Maybe<String>;
+  handle_not_contains?: Maybe<String>;
+  handle_starts_with?: Maybe<String>;
+  handle_not_starts_with?: Maybe<String>;
+  handle_ends_with?: Maybe<String>;
+  handle_not_ends_with?: Maybe<String>;
+  AND?: Maybe<OrganizationWhereInput[] | OrganizationWhereInput>;
+  OR?: Maybe<OrganizationWhereInput[] | OrganizationWhereInput>;
+  NOT?: Maybe<OrganizationWhereInput[] | OrganizationWhereInput>;
+}
+
+export interface OwnerUpdateDataInput {
+  handle?: Maybe<String>;
+}
+
 export interface NodeNode {
   id: ID_Output;
+}
+
+export interface BatchPayload {
+  count: Long;
+}
+
+export interface BatchPayloadPromise
+  extends Promise<BatchPayload>,
+    Fragmentable {
+  count: () => Promise<Long>;
+}
+
+export interface BatchPayloadSubscription
+  extends Promise<AsyncIterator<BatchPayload>>,
+    Fragmentable {
+  count: () => Promise<AsyncIterator<Long>>;
 }
 
 export interface UserPreviousValues {
@@ -1185,6 +1374,61 @@ export interface UserPreviousValuesSubscription
   email: () => Promise<AsyncIterator<String>>;
   name: () => Promise<AsyncIterator<String>>;
   handle: () => Promise<AsyncIterator<String>>;
+}
+
+export interface Owner {
+  id: ID_Output;
+  createdAt: DateTimeOutput;
+  updatedAt: DateTimeOutput;
+  handle: String;
+}
+
+export interface OwnerPromise extends Promise<Owner>, Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  handle: () => Promise<String>;
+}
+
+export interface OwnerSubscription
+  extends Promise<AsyncIterator<Owner>>,
+    Fragmentable {
+  id: () => Promise<AsyncIterator<ID_Output>>;
+  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  handle: () => Promise<AsyncIterator<String>>;
+}
+
+export interface OwnerNullablePromise
+  extends Promise<Owner | null>,
+    Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  handle: () => Promise<String>;
+}
+
+export interface PageInfo {
+  hasNextPage: Boolean;
+  hasPreviousPage: Boolean;
+  startCursor?: String;
+  endCursor?: String;
+}
+
+export interface PageInfoPromise extends Promise<PageInfo>, Fragmentable {
+  hasNextPage: () => Promise<Boolean>;
+  hasPreviousPage: () => Promise<Boolean>;
+  startCursor: () => Promise<String>;
+  endCursor: () => Promise<String>;
+}
+
+export interface PageInfoSubscription
+  extends Promise<AsyncIterator<PageInfo>>,
+    Fragmentable {
+  hasNextPage: () => Promise<AsyncIterator<Boolean>>;
+  hasPreviousPage: () => Promise<AsyncIterator<Boolean>>;
+  startCursor: () => Promise<AsyncIterator<String>>;
+  endCursor: () => Promise<AsyncIterator<String>>;
 }
 
 export interface AggregateOrganization {
@@ -1243,60 +1487,368 @@ export interface OrganizationEdgeSubscription
   cursor: () => Promise<AsyncIterator<String>>;
 }
 
-export interface PageInfo {
-  hasNextPage: Boolean;
-  hasPreviousPage: Boolean;
-  startCursor?: String;
-  endCursor?: String;
+export interface AggregateUser {
+  count: Int;
 }
 
-export interface PageInfoPromise extends Promise<PageInfo>, Fragmentable {
-  hasNextPage: () => Promise<Boolean>;
-  hasPreviousPage: () => Promise<Boolean>;
-  startCursor: () => Promise<String>;
-  endCursor: () => Promise<String>;
-}
-
-export interface PageInfoSubscription
-  extends Promise<AsyncIterator<PageInfo>>,
+export interface AggregateUserPromise
+  extends Promise<AggregateUser>,
     Fragmentable {
-  hasNextPage: () => Promise<AsyncIterator<Boolean>>;
-  hasPreviousPage: () => Promise<AsyncIterator<Boolean>>;
-  startCursor: () => Promise<AsyncIterator<String>>;
-  endCursor: () => Promise<AsyncIterator<String>>;
+  count: () => Promise<Int>;
 }
 
-export interface BatchPayload {
-  count: Long;
-}
-
-export interface BatchPayloadPromise
-  extends Promise<BatchPayload>,
+export interface AggregateUserSubscription
+  extends Promise<AsyncIterator<AggregateUser>>,
     Fragmentable {
-  count: () => Promise<Long>;
+  count: () => Promise<AsyncIterator<Int>>;
 }
 
-export interface BatchPayloadSubscription
-  extends Promise<AsyncIterator<BatchPayload>>,
+export interface RepositorySubscriptionPayload {
+  mutation: MutationType;
+  node: Repository;
+  updatedFields: String[];
+  previousValues: RepositoryPreviousValues;
+}
+
+export interface RepositorySubscriptionPayloadPromise
+  extends Promise<RepositorySubscriptionPayload>,
     Fragmentable {
-  count: () => Promise<AsyncIterator<Long>>;
+  mutation: () => Promise<MutationType>;
+  node: <T = RepositoryPromise>() => T;
+  updatedFields: () => Promise<String[]>;
+  previousValues: <T = RepositoryPreviousValuesPromise>() => T;
 }
 
-export interface CommitEdge {
-  node: Commit;
+export interface RepositorySubscriptionPayloadSubscription
+  extends Promise<AsyncIterator<RepositorySubscriptionPayload>>,
+    Fragmentable {
+  mutation: () => Promise<AsyncIterator<MutationType>>;
+  node: <T = RepositorySubscription>() => T;
+  updatedFields: () => Promise<AsyncIterator<String[]>>;
+  previousValues: <T = RepositoryPreviousValuesSubscription>() => T;
+}
+
+export interface AggregateCommit {
+  count: Int;
+}
+
+export interface AggregateCommitPromise
+  extends Promise<AggregateCommit>,
+    Fragmentable {
+  count: () => Promise<Int>;
+}
+
+export interface AggregateCommitSubscription
+  extends Promise<AsyncIterator<AggregateCommit>>,
+    Fragmentable {
+  count: () => Promise<AsyncIterator<Int>>;
+}
+
+export interface UserEdge {
+  node: User;
   cursor: String;
 }
 
-export interface CommitEdgePromise extends Promise<CommitEdge>, Fragmentable {
-  node: <T = CommitPromise>() => T;
+export interface UserEdgePromise extends Promise<UserEdge>, Fragmentable {
+  node: <T = UserPromise>() => T;
   cursor: () => Promise<String>;
 }
 
-export interface CommitEdgeSubscription
-  extends Promise<AsyncIterator<CommitEdge>>,
+export interface UserEdgeSubscription
+  extends Promise<AsyncIterator<UserEdge>>,
     Fragmentable {
-  node: <T = CommitSubscription>() => T;
+  node: <T = UserSubscription>() => T;
   cursor: () => Promise<AsyncIterator<String>>;
+}
+
+export interface UserConnection {
+  pageInfo: PageInfo;
+  edges: UserEdge[];
+}
+
+export interface UserConnectionPromise
+  extends Promise<UserConnection>,
+    Fragmentable {
+  pageInfo: <T = PageInfoPromise>() => T;
+  edges: <T = FragmentableArray<UserEdge>>() => T;
+  aggregate: <T = AggregateUserPromise>() => T;
+}
+
+export interface UserConnectionSubscription
+  extends Promise<AsyncIterator<UserConnection>>,
+    Fragmentable {
+  pageInfo: <T = PageInfoSubscription>() => T;
+  edges: <T = Promise<AsyncIterator<UserEdgeSubscription>>>() => T;
+  aggregate: <T = AggregateUserSubscription>() => T;
+}
+
+export interface AggregateRepository {
+  count: Int;
+}
+
+export interface AggregateRepositoryPromise
+  extends Promise<AggregateRepository>,
+    Fragmentable {
+  count: () => Promise<Int>;
+}
+
+export interface AggregateRepositorySubscription
+  extends Promise<AsyncIterator<AggregateRepository>>,
+    Fragmentable {
+  count: () => Promise<AsyncIterator<Int>>;
+}
+
+export interface RepositoryConnection {
+  pageInfo: PageInfo;
+  edges: RepositoryEdge[];
+}
+
+export interface RepositoryConnectionPromise
+  extends Promise<RepositoryConnection>,
+    Fragmentable {
+  pageInfo: <T = PageInfoPromise>() => T;
+  edges: <T = FragmentableArray<RepositoryEdge>>() => T;
+  aggregate: <T = AggregateRepositoryPromise>() => T;
+}
+
+export interface RepositoryConnectionSubscription
+  extends Promise<AsyncIterator<RepositoryConnection>>,
+    Fragmentable {
+  pageInfo: <T = PageInfoSubscription>() => T;
+  edges: <T = Promise<AsyncIterator<RepositoryEdgeSubscription>>>() => T;
+  aggregate: <T = AggregateRepositorySubscription>() => T;
+}
+
+export interface CommitSubscriptionPayload {
+  mutation: MutationType;
+  node: Commit;
+  updatedFields: String[];
+  previousValues: CommitPreviousValues;
+}
+
+export interface CommitSubscriptionPayloadPromise
+  extends Promise<CommitSubscriptionPayload>,
+    Fragmentable {
+  mutation: () => Promise<MutationType>;
+  node: <T = CommitPromise>() => T;
+  updatedFields: () => Promise<String[]>;
+  previousValues: <T = CommitPreviousValuesPromise>() => T;
+}
+
+export interface CommitSubscriptionPayloadSubscription
+  extends Promise<AsyncIterator<CommitSubscriptionPayload>>,
+    Fragmentable {
+  mutation: () => Promise<AsyncIterator<MutationType>>;
+  node: <T = CommitSubscription>() => T;
+  updatedFields: () => Promise<AsyncIterator<String[]>>;
+  previousValues: <T = CommitPreviousValuesSubscription>() => T;
+}
+
+export interface UserSubscriptionPayload {
+  mutation: MutationType;
+  node: User;
+  updatedFields: String[];
+  previousValues: UserPreviousValues;
+}
+
+export interface UserSubscriptionPayloadPromise
+  extends Promise<UserSubscriptionPayload>,
+    Fragmentable {
+  mutation: () => Promise<MutationType>;
+  node: <T = UserPromise>() => T;
+  updatedFields: () => Promise<String[]>;
+  previousValues: <T = UserPreviousValuesPromise>() => T;
+}
+
+export interface UserSubscriptionPayloadSubscription
+  extends Promise<AsyncIterator<UserSubscriptionPayload>>,
+    Fragmentable {
+  mutation: () => Promise<AsyncIterator<MutationType>>;
+  node: <T = UserSubscription>() => T;
+  updatedFields: () => Promise<AsyncIterator<String[]>>;
+  previousValues: <T = UserPreviousValuesSubscription>() => T;
+}
+
+export interface CommitPreviousValues {
+  id: ID_Output;
+  createdAt: DateTimeOutput;
+  updatedAt: DateTimeOutput;
+  committedDate: DateTimeOutput;
+  hash: String;
+  message: String;
+  messageHeadline: String;
+  status: CommitStatus;
+}
+
+export interface CommitPreviousValuesPromise
+  extends Promise<CommitPreviousValues>,
+    Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  committedDate: () => Promise<DateTimeOutput>;
+  hash: () => Promise<String>;
+  message: () => Promise<String>;
+  messageHeadline: () => Promise<String>;
+  status: () => Promise<CommitStatus>;
+}
+
+export interface CommitPreviousValuesSubscription
+  extends Promise<AsyncIterator<CommitPreviousValues>>,
+    Fragmentable {
+  id: () => Promise<AsyncIterator<ID_Output>>;
+  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  committedDate: () => Promise<AsyncIterator<DateTimeOutput>>;
+  hash: () => Promise<AsyncIterator<String>>;
+  message: () => Promise<AsyncIterator<String>>;
+  messageHeadline: () => Promise<AsyncIterator<String>>;
+  status: () => Promise<AsyncIterator<CommitStatus>>;
+}
+
+export interface AggregatePost {
+  count: Int;
+}
+
+export interface AggregatePostPromise
+  extends Promise<AggregatePost>,
+    Fragmentable {
+  count: () => Promise<Int>;
+}
+
+export interface AggregatePostSubscription
+  extends Promise<AsyncIterator<AggregatePost>>,
+    Fragmentable {
+  count: () => Promise<AsyncIterator<Int>>;
+}
+
+export interface OrganizationConnection {
+  pageInfo: PageInfo;
+  edges: OrganizationEdge[];
+}
+
+export interface OrganizationConnectionPromise
+  extends Promise<OrganizationConnection>,
+    Fragmentable {
+  pageInfo: <T = PageInfoPromise>() => T;
+  edges: <T = FragmentableArray<OrganizationEdge>>() => T;
+  aggregate: <T = AggregateOrganizationPromise>() => T;
+}
+
+export interface OrganizationConnectionSubscription
+  extends Promise<AsyncIterator<OrganizationConnection>>,
+    Fragmentable {
+  pageInfo: <T = PageInfoSubscription>() => T;
+  edges: <T = Promise<AsyncIterator<OrganizationEdgeSubscription>>>() => T;
+  aggregate: <T = AggregateOrganizationSubscription>() => T;
+}
+
+export interface PostConnection {
+  pageInfo: PageInfo;
+  edges: PostEdge[];
+}
+
+export interface PostConnectionPromise
+  extends Promise<PostConnection>,
+    Fragmentable {
+  pageInfo: <T = PageInfoPromise>() => T;
+  edges: <T = FragmentableArray<PostEdge>>() => T;
+  aggregate: <T = AggregatePostPromise>() => T;
+}
+
+export interface PostConnectionSubscription
+  extends Promise<AsyncIterator<PostConnection>>,
+    Fragmentable {
+  pageInfo: <T = PageInfoSubscription>() => T;
+  edges: <T = Promise<AsyncIterator<PostEdgeSubscription>>>() => T;
+  aggregate: <T = AggregatePostSubscription>() => T;
+}
+
+export interface OrganizationSubscriptionPayload {
+  mutation: MutationType;
+  node: Organization;
+  updatedFields: String[];
+  previousValues: OrganizationPreviousValues;
+}
+
+export interface OrganizationSubscriptionPayloadPromise
+  extends Promise<OrganizationSubscriptionPayload>,
+    Fragmentable {
+  mutation: () => Promise<MutationType>;
+  node: <T = OrganizationPromise>() => T;
+  updatedFields: () => Promise<String[]>;
+  previousValues: <T = OrganizationPreviousValuesPromise>() => T;
+}
+
+export interface OrganizationSubscriptionPayloadSubscription
+  extends Promise<AsyncIterator<OrganizationSubscriptionPayload>>,
+    Fragmentable {
+  mutation: () => Promise<AsyncIterator<MutationType>>;
+  node: <T = OrganizationSubscription>() => T;
+  updatedFields: () => Promise<AsyncIterator<String[]>>;
+  previousValues: <T = OrganizationPreviousValuesSubscription>() => T;
+}
+
+export interface AggregateOwner {
+  count: Int;
+}
+
+export interface AggregateOwnerPromise
+  extends Promise<AggregateOwner>,
+    Fragmentable {
+  count: () => Promise<Int>;
+}
+
+export interface AggregateOwnerSubscription
+  extends Promise<AsyncIterator<AggregateOwner>>,
+    Fragmentable {
+  count: () => Promise<AsyncIterator<Int>>;
+}
+
+export interface OrganizationPreviousValues {
+  id: ID_Output;
+  createdAt: DateTimeOutput;
+  updatedAt: DateTimeOutput;
+  handle: String;
+}
+
+export interface OrganizationPreviousValuesPromise
+  extends Promise<OrganizationPreviousValues>,
+    Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  handle: () => Promise<String>;
+}
+
+export interface OrganizationPreviousValuesSubscription
+  extends Promise<AsyncIterator<OrganizationPreviousValues>>,
+    Fragmentable {
+  id: () => Promise<AsyncIterator<ID_Output>>;
+  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  handle: () => Promise<AsyncIterator<String>>;
+}
+
+export interface OwnerConnection {
+  pageInfo: PageInfo;
+  edges: OwnerEdge[];
+}
+
+export interface OwnerConnectionPromise
+  extends Promise<OwnerConnection>,
+    Fragmentable {
+  pageInfo: <T = PageInfoPromise>() => T;
+  edges: <T = FragmentableArray<OwnerEdge>>() => T;
+  aggregate: <T = AggregateOwnerPromise>() => T;
+}
+
+export interface OwnerConnectionSubscription
+  extends Promise<AsyncIterator<OwnerConnection>>,
+    Fragmentable {
+  pageInfo: <T = PageInfoSubscription>() => T;
+  edges: <T = Promise<AsyncIterator<OwnerEdgeSubscription>>>() => T;
+  aggregate: <T = AggregateOwnerSubscription>() => T;
 }
 
 export interface User {
@@ -1339,64 +1891,6 @@ export interface UserNullablePromise
   handle: () => Promise<String>;
 }
 
-export interface OrganizationConnection {
-  pageInfo: PageInfo;
-  edges: OrganizationEdge[];
-}
-
-export interface OrganizationConnectionPromise
-  extends Promise<OrganizationConnection>,
-    Fragmentable {
-  pageInfo: <T = PageInfoPromise>() => T;
-  edges: <T = FragmentableArray<OrganizationEdge>>() => T;
-  aggregate: <T = AggregateOrganizationPromise>() => T;
-}
-
-export interface OrganizationConnectionSubscription
-  extends Promise<AsyncIterator<OrganizationConnection>>,
-    Fragmentable {
-  pageInfo: <T = PageInfoSubscription>() => T;
-  edges: <T = Promise<AsyncIterator<OrganizationEdgeSubscription>>>() => T;
-  aggregate: <T = AggregateOrganizationSubscription>() => T;
-}
-
-export interface AggregateUser {
-  count: Int;
-}
-
-export interface AggregateUserPromise
-  extends Promise<AggregateUser>,
-    Fragmentable {
-  count: () => Promise<Int>;
-}
-
-export interface AggregateUserSubscription
-  extends Promise<AsyncIterator<AggregateUser>>,
-    Fragmentable {
-  count: () => Promise<AsyncIterator<Int>>;
-}
-
-export interface UserConnection {
-  pageInfo: PageInfo;
-  edges: UserEdge[];
-}
-
-export interface UserConnectionPromise
-  extends Promise<UserConnection>,
-    Fragmentable {
-  pageInfo: <T = PageInfoPromise>() => T;
-  edges: <T = FragmentableArray<UserEdge>>() => T;
-  aggregate: <T = AggregateUserPromise>() => T;
-}
-
-export interface UserConnectionSubscription
-  extends Promise<AsyncIterator<UserConnection>>,
-    Fragmentable {
-  pageInfo: <T = PageInfoSubscription>() => T;
-  edges: <T = Promise<AsyncIterator<UserEdgeSubscription>>>() => T;
-  aggregate: <T = AggregateUserSubscription>() => T;
-}
-
 export interface RepositoryPreviousValues {
   id: ID_Output;
   createdAt: DateTimeOutput;
@@ -1425,48 +1919,29 @@ export interface RepositoryPreviousValuesSubscription
   service: () => Promise<AsyncIterator<RepositoryServiceType>>;
 }
 
-export interface RepositoryEdge {
-  node: Repository;
-  cursor: String;
-}
-
-export interface RepositoryEdgePromise
-  extends Promise<RepositoryEdge>,
-    Fragmentable {
-  node: <T = RepositoryPromise>() => T;
-  cursor: () => Promise<String>;
-}
-
-export interface RepositoryEdgeSubscription
-  extends Promise<AsyncIterator<RepositoryEdge>>,
-    Fragmentable {
-  node: <T = RepositorySubscription>() => T;
-  cursor: () => Promise<AsyncIterator<String>>;
-}
-
-export interface RepositorySubscriptionPayload {
+export interface OwnerSubscriptionPayload {
   mutation: MutationType;
-  node: Repository;
+  node: Owner;
   updatedFields: String[];
-  previousValues: RepositoryPreviousValues;
+  previousValues: OwnerPreviousValues;
 }
 
-export interface RepositorySubscriptionPayloadPromise
-  extends Promise<RepositorySubscriptionPayload>,
+export interface OwnerSubscriptionPayloadPromise
+  extends Promise<OwnerSubscriptionPayload>,
     Fragmentable {
   mutation: () => Promise<MutationType>;
-  node: <T = RepositoryPromise>() => T;
+  node: <T = OwnerPromise>() => T;
   updatedFields: () => Promise<String[]>;
-  previousValues: <T = RepositoryPreviousValuesPromise>() => T;
+  previousValues: <T = OwnerPreviousValuesPromise>() => T;
 }
 
-export interface RepositorySubscriptionPayloadSubscription
-  extends Promise<AsyncIterator<RepositorySubscriptionPayload>>,
+export interface OwnerSubscriptionPayloadSubscription
+  extends Promise<AsyncIterator<OwnerSubscriptionPayload>>,
     Fragmentable {
   mutation: () => Promise<AsyncIterator<MutationType>>;
-  node: <T = RepositorySubscription>() => T;
+  node: <T = OwnerSubscription>() => T;
   updatedFields: () => Promise<AsyncIterator<String[]>>;
-  previousValues: <T = RepositoryPreviousValuesSubscription>() => T;
+  previousValues: <T = OwnerPreviousValuesSubscription>() => T;
 }
 
 export interface Commit {
@@ -1544,29 +2019,206 @@ export interface CommitNullablePromise
   status: () => Promise<CommitStatus>;
 }
 
-export interface CommitSubscriptionPayload {
-  mutation: MutationType;
-  node: Commit;
-  updatedFields: String[];
-  previousValues: CommitPreviousValues;
+export interface PostEdge {
+  node: Post;
+  cursor: String;
 }
 
-export interface CommitSubscriptionPayloadPromise
-  extends Promise<CommitSubscriptionPayload>,
+export interface PostEdgePromise extends Promise<PostEdge>, Fragmentable {
+  node: <T = PostPromise>() => T;
+  cursor: () => Promise<String>;
+}
+
+export interface PostEdgeSubscription
+  extends Promise<AsyncIterator<PostEdge>>,
+    Fragmentable {
+  node: <T = PostSubscription>() => T;
+  cursor: () => Promise<AsyncIterator<String>>;
+}
+
+export interface PostPreviousValues {
+  id: ID_Output;
+  createdAt: DateTimeOutput;
+  updatedAt: DateTimeOutput;
+  published: Boolean;
+  title: String;
+  content?: String;
+}
+
+export interface PostPreviousValuesPromise
+  extends Promise<PostPreviousValues>,
+    Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  published: () => Promise<Boolean>;
+  title: () => Promise<String>;
+  content: () => Promise<String>;
+}
+
+export interface PostPreviousValuesSubscription
+  extends Promise<AsyncIterator<PostPreviousValues>>,
+    Fragmentable {
+  id: () => Promise<AsyncIterator<ID_Output>>;
+  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  published: () => Promise<AsyncIterator<Boolean>>;
+  title: () => Promise<AsyncIterator<String>>;
+  content: () => Promise<AsyncIterator<String>>;
+}
+
+export interface PostSubscriptionPayload {
+  mutation: MutationType;
+  node: Post;
+  updatedFields: String[];
+  previousValues: PostPreviousValues;
+}
+
+export interface PostSubscriptionPayloadPromise
+  extends Promise<PostSubscriptionPayload>,
     Fragmentable {
   mutation: () => Promise<MutationType>;
-  node: <T = CommitPromise>() => T;
+  node: <T = PostPromise>() => T;
   updatedFields: () => Promise<String[]>;
-  previousValues: <T = CommitPreviousValuesPromise>() => T;
+  previousValues: <T = PostPreviousValuesPromise>() => T;
 }
 
-export interface CommitSubscriptionPayloadSubscription
-  extends Promise<AsyncIterator<CommitSubscriptionPayload>>,
+export interface PostSubscriptionPayloadSubscription
+  extends Promise<AsyncIterator<PostSubscriptionPayload>>,
     Fragmentable {
   mutation: () => Promise<AsyncIterator<MutationType>>;
-  node: <T = CommitSubscription>() => T;
+  node: <T = PostSubscription>() => T;
   updatedFields: () => Promise<AsyncIterator<String[]>>;
-  previousValues: <T = CommitPreviousValuesSubscription>() => T;
+  previousValues: <T = PostPreviousValuesSubscription>() => T;
+}
+
+export interface Organization {
+  id: ID_Output;
+  createdAt: DateTimeOutput;
+  updatedAt: DateTimeOutput;
+  handle: String;
+}
+
+export interface OrganizationPromise
+  extends Promise<Organization>,
+    Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  users: <T = FragmentableArray<User>>(args?: {
+    where?: UserWhereInput;
+    orderBy?: UserOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => T;
+  handle: () => Promise<String>;
+}
+
+export interface OrganizationSubscription
+  extends Promise<AsyncIterator<Organization>>,
+    Fragmentable {
+  id: () => Promise<AsyncIterator<ID_Output>>;
+  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  users: <T = Promise<AsyncIterator<UserSubscription>>>(args?: {
+    where?: UserWhereInput;
+    orderBy?: UserOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => T;
+  handle: () => Promise<AsyncIterator<String>>;
+}
+
+export interface OrganizationNullablePromise
+  extends Promise<Organization | null>,
+    Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  users: <T = FragmentableArray<User>>(args?: {
+    where?: UserWhereInput;
+    orderBy?: UserOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => T;
+  handle: () => Promise<String>;
+}
+
+export interface OwnerPreviousValues {
+  id: ID_Output;
+  createdAt: DateTimeOutput;
+  updatedAt: DateTimeOutput;
+  handle: String;
+}
+
+export interface OwnerPreviousValuesPromise
+  extends Promise<OwnerPreviousValues>,
+    Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  handle: () => Promise<String>;
+}
+
+export interface OwnerPreviousValuesSubscription
+  extends Promise<AsyncIterator<OwnerPreviousValues>>,
+    Fragmentable {
+  id: () => Promise<AsyncIterator<ID_Output>>;
+  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  handle: () => Promise<AsyncIterator<String>>;
+}
+
+export interface Post {
+  id: ID_Output;
+  createdAt: DateTimeOutput;
+  updatedAt: DateTimeOutput;
+  published: Boolean;
+  title: String;
+  content?: String;
+}
+
+export interface PostPromise extends Promise<Post>, Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  published: () => Promise<Boolean>;
+  title: () => Promise<String>;
+  content: () => Promise<String>;
+  author: <T = UserPromise>() => T;
+}
+
+export interface PostSubscription
+  extends Promise<AsyncIterator<Post>>,
+    Fragmentable {
+  id: () => Promise<AsyncIterator<ID_Output>>;
+  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  published: () => Promise<AsyncIterator<Boolean>>;
+  title: () => Promise<AsyncIterator<String>>;
+  content: () => Promise<AsyncIterator<String>>;
+  author: <T = UserSubscription>() => T;
+}
+
+export interface PostNullablePromise
+  extends Promise<Post | null>,
+    Fragmentable {
+  id: () => Promise<ID_Output>;
+  createdAt: () => Promise<DateTimeOutput>;
+  updatedAt: () => Promise<DateTimeOutput>;
+  published: () => Promise<Boolean>;
+  title: () => Promise<String>;
+  content: () => Promise<String>;
+  author: <T = UserPromise>() => T;
 }
 
 export interface Repository {
@@ -1635,41 +2287,40 @@ export interface RepositoryNullablePromise
   }) => T;
 }
 
-export interface CommitPreviousValues {
-  id: ID_Output;
-  createdAt: DateTimeOutput;
-  updatedAt: DateTimeOutput;
-  committedDate: DateTimeOutput;
-  hash: String;
-  message: String;
-  messageHeadline: String;
-  status: CommitStatus;
+export interface RepositoryEdge {
+  node: Repository;
+  cursor: String;
 }
 
-export interface CommitPreviousValuesPromise
-  extends Promise<CommitPreviousValues>,
+export interface RepositoryEdgePromise
+  extends Promise<RepositoryEdge>,
     Fragmentable {
-  id: () => Promise<ID_Output>;
-  createdAt: () => Promise<DateTimeOutput>;
-  updatedAt: () => Promise<DateTimeOutput>;
-  committedDate: () => Promise<DateTimeOutput>;
-  hash: () => Promise<String>;
-  message: () => Promise<String>;
-  messageHeadline: () => Promise<String>;
-  status: () => Promise<CommitStatus>;
+  node: <T = RepositoryPromise>() => T;
+  cursor: () => Promise<String>;
 }
 
-export interface CommitPreviousValuesSubscription
-  extends Promise<AsyncIterator<CommitPreviousValues>>,
+export interface RepositoryEdgeSubscription
+  extends Promise<AsyncIterator<RepositoryEdge>>,
     Fragmentable {
-  id: () => Promise<AsyncIterator<ID_Output>>;
-  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  committedDate: () => Promise<AsyncIterator<DateTimeOutput>>;
-  hash: () => Promise<AsyncIterator<String>>;
-  message: () => Promise<AsyncIterator<String>>;
-  messageHeadline: () => Promise<AsyncIterator<String>>;
-  status: () => Promise<AsyncIterator<CommitStatus>>;
+  node: <T = RepositorySubscription>() => T;
+  cursor: () => Promise<AsyncIterator<String>>;
+}
+
+export interface CommitEdge {
+  node: Commit;
+  cursor: String;
+}
+
+export interface CommitEdgePromise extends Promise<CommitEdge>, Fragmentable {
+  node: <T = CommitPromise>() => T;
+  cursor: () => Promise<String>;
+}
+
+export interface CommitEdgeSubscription
+  extends Promise<AsyncIterator<CommitEdge>>,
+    Fragmentable {
+  node: <T = CommitSubscription>() => T;
+  cursor: () => Promise<AsyncIterator<String>>;
 }
 
 export interface OwnerEdge {
@@ -1689,338 +2340,12 @@ export interface OwnerEdgeSubscription
   cursor: () => Promise<AsyncIterator<String>>;
 }
 
-export interface Organization {
-  id: ID_Output;
-  createdAt: DateTimeOutput;
-  updatedAt: DateTimeOutput;
-  handle: String;
-}
-
-export interface OrganizationPromise
-  extends Promise<Organization>,
-    Fragmentable {
-  id: () => Promise<ID_Output>;
-  createdAt: () => Promise<DateTimeOutput>;
-  updatedAt: () => Promise<DateTimeOutput>;
-  users: <T = FragmentableArray<User>>(args?: {
-    where?: UserWhereInput;
-    orderBy?: UserOrderByInput;
-    skip?: Int;
-    after?: String;
-    before?: String;
-    first?: Int;
-    last?: Int;
-  }) => T;
-  handle: () => Promise<String>;
-}
-
-export interface OrganizationSubscription
-  extends Promise<AsyncIterator<Organization>>,
-    Fragmentable {
-  id: () => Promise<AsyncIterator<ID_Output>>;
-  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  users: <T = Promise<AsyncIterator<UserSubscription>>>(args?: {
-    where?: UserWhereInput;
-    orderBy?: UserOrderByInput;
-    skip?: Int;
-    after?: String;
-    before?: String;
-    first?: Int;
-    last?: Int;
-  }) => T;
-  handle: () => Promise<AsyncIterator<String>>;
-}
-
-export interface OrganizationNullablePromise
-  extends Promise<Organization | null>,
-    Fragmentable {
-  id: () => Promise<ID_Output>;
-  createdAt: () => Promise<DateTimeOutput>;
-  updatedAt: () => Promise<DateTimeOutput>;
-  users: <T = FragmentableArray<User>>(args?: {
-    where?: UserWhereInput;
-    orderBy?: UserOrderByInput;
-    skip?: Int;
-    after?: String;
-    before?: String;
-    first?: Int;
-    last?: Int;
-  }) => T;
-  handle: () => Promise<String>;
-}
-
-export interface Owner {
-  id: ID_Output;
-  createdAt: DateTimeOutput;
-  updatedAt: DateTimeOutput;
-  handle: String;
-}
-
-export interface OwnerPromise extends Promise<Owner>, Fragmentable {
-  id: () => Promise<ID_Output>;
-  createdAt: () => Promise<DateTimeOutput>;
-  updatedAt: () => Promise<DateTimeOutput>;
-  handle: () => Promise<String>;
-}
-
-export interface OwnerSubscription
-  extends Promise<AsyncIterator<Owner>>,
-    Fragmentable {
-  id: () => Promise<AsyncIterator<ID_Output>>;
-  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  handle: () => Promise<AsyncIterator<String>>;
-}
-
-export interface OwnerNullablePromise
-  extends Promise<Owner | null>,
-    Fragmentable {
-  id: () => Promise<ID_Output>;
-  createdAt: () => Promise<DateTimeOutput>;
-  updatedAt: () => Promise<DateTimeOutput>;
-  handle: () => Promise<String>;
-}
-
-export interface OrganizationSubscriptionPayload {
-  mutation: MutationType;
-  node: Organization;
-  updatedFields: String[];
-  previousValues: OrganizationPreviousValues;
-}
-
-export interface OrganizationSubscriptionPayloadPromise
-  extends Promise<OrganizationSubscriptionPayload>,
-    Fragmentable {
-  mutation: () => Promise<MutationType>;
-  node: <T = OrganizationPromise>() => T;
-  updatedFields: () => Promise<String[]>;
-  previousValues: <T = OrganizationPreviousValuesPromise>() => T;
-}
-
-export interface OrganizationSubscriptionPayloadSubscription
-  extends Promise<AsyncIterator<OrganizationSubscriptionPayload>>,
-    Fragmentable {
-  mutation: () => Promise<AsyncIterator<MutationType>>;
-  node: <T = OrganizationSubscription>() => T;
-  updatedFields: () => Promise<AsyncIterator<String[]>>;
-  previousValues: <T = OrganizationPreviousValuesSubscription>() => T;
-}
-
-export interface AggregateRepository {
-  count: Int;
-}
-
-export interface AggregateRepositoryPromise
-  extends Promise<AggregateRepository>,
-    Fragmentable {
-  count: () => Promise<Int>;
-}
-
-export interface AggregateRepositorySubscription
-  extends Promise<AsyncIterator<AggregateRepository>>,
-    Fragmentable {
-  count: () => Promise<AsyncIterator<Int>>;
-}
-
-export interface UserSubscriptionPayload {
-  mutation: MutationType;
-  node: User;
-  updatedFields: String[];
-  previousValues: UserPreviousValues;
-}
-
-export interface UserSubscriptionPayloadPromise
-  extends Promise<UserSubscriptionPayload>,
-    Fragmentable {
-  mutation: () => Promise<MutationType>;
-  node: <T = UserPromise>() => T;
-  updatedFields: () => Promise<String[]>;
-  previousValues: <T = UserPreviousValuesPromise>() => T;
-}
-
-export interface UserSubscriptionPayloadSubscription
-  extends Promise<AsyncIterator<UserSubscriptionPayload>>,
-    Fragmentable {
-  mutation: () => Promise<AsyncIterator<MutationType>>;
-  node: <T = UserSubscription>() => T;
-  updatedFields: () => Promise<AsyncIterator<String[]>>;
-  previousValues: <T = UserPreviousValuesSubscription>() => T;
-}
-
-export interface OwnerPreviousValues {
-  id: ID_Output;
-  createdAt: DateTimeOutput;
-  updatedAt: DateTimeOutput;
-  handle: String;
-}
-
-export interface OwnerPreviousValuesPromise
-  extends Promise<OwnerPreviousValues>,
-    Fragmentable {
-  id: () => Promise<ID_Output>;
-  createdAt: () => Promise<DateTimeOutput>;
-  updatedAt: () => Promise<DateTimeOutput>;
-  handle: () => Promise<String>;
-}
-
-export interface OwnerPreviousValuesSubscription
-  extends Promise<AsyncIterator<OwnerPreviousValues>>,
-    Fragmentable {
-  id: () => Promise<AsyncIterator<ID_Output>>;
-  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  handle: () => Promise<AsyncIterator<String>>;
-}
-
-export interface OwnerSubscriptionPayload {
-  mutation: MutationType;
-  node: Owner;
-  updatedFields: String[];
-  previousValues: OwnerPreviousValues;
-}
-
-export interface OwnerSubscriptionPayloadPromise
-  extends Promise<OwnerSubscriptionPayload>,
-    Fragmentable {
-  mutation: () => Promise<MutationType>;
-  node: <T = OwnerPromise>() => T;
-  updatedFields: () => Promise<String[]>;
-  previousValues: <T = OwnerPreviousValuesPromise>() => T;
-}
-
-export interface OwnerSubscriptionPayloadSubscription
-  extends Promise<AsyncIterator<OwnerSubscriptionPayload>>,
-    Fragmentable {
-  mutation: () => Promise<AsyncIterator<MutationType>>;
-  node: <T = OwnerSubscription>() => T;
-  updatedFields: () => Promise<AsyncIterator<String[]>>;
-  previousValues: <T = OwnerPreviousValuesSubscription>() => T;
-}
-
-export interface AggregateCommit {
-  count: Int;
-}
-
-export interface AggregateCommitPromise
-  extends Promise<AggregateCommit>,
-    Fragmentable {
-  count: () => Promise<Int>;
-}
-
-export interface AggregateCommitSubscription
-  extends Promise<AsyncIterator<AggregateCommit>>,
-    Fragmentable {
-  count: () => Promise<AsyncIterator<Int>>;
-}
-
-export interface OrganizationPreviousValues {
-  id: ID_Output;
-  createdAt: DateTimeOutput;
-  updatedAt: DateTimeOutput;
-  handle: String;
-}
-
-export interface OrganizationPreviousValuesPromise
-  extends Promise<OrganizationPreviousValues>,
-    Fragmentable {
-  id: () => Promise<ID_Output>;
-  createdAt: () => Promise<DateTimeOutput>;
-  updatedAt: () => Promise<DateTimeOutput>;
-  handle: () => Promise<String>;
-}
-
-export interface OrganizationPreviousValuesSubscription
-  extends Promise<AsyncIterator<OrganizationPreviousValues>>,
-    Fragmentable {
-  id: () => Promise<AsyncIterator<ID_Output>>;
-  createdAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  updatedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
-  handle: () => Promise<AsyncIterator<String>>;
-}
-
-export interface AggregateOwner {
-  count: Int;
-}
-
-export interface AggregateOwnerPromise
-  extends Promise<AggregateOwner>,
-    Fragmentable {
-  count: () => Promise<Int>;
-}
-
-export interface AggregateOwnerSubscription
-  extends Promise<AsyncIterator<AggregateOwner>>,
-    Fragmentable {
-  count: () => Promise<AsyncIterator<Int>>;
-}
-
-export interface RepositoryConnection {
-  pageInfo: PageInfo;
-  edges: RepositoryEdge[];
-}
-
-export interface RepositoryConnectionPromise
-  extends Promise<RepositoryConnection>,
-    Fragmentable {
-  pageInfo: <T = PageInfoPromise>() => T;
-  edges: <T = FragmentableArray<RepositoryEdge>>() => T;
-  aggregate: <T = AggregateRepositoryPromise>() => T;
-}
-
-export interface RepositoryConnectionSubscription
-  extends Promise<AsyncIterator<RepositoryConnection>>,
-    Fragmentable {
-  pageInfo: <T = PageInfoSubscription>() => T;
-  edges: <T = Promise<AsyncIterator<RepositoryEdgeSubscription>>>() => T;
-  aggregate: <T = AggregateRepositorySubscription>() => T;
-}
-
-export interface UserEdge {
-  node: User;
-  cursor: String;
-}
-
-export interface UserEdgePromise extends Promise<UserEdge>, Fragmentable {
-  node: <T = UserPromise>() => T;
-  cursor: () => Promise<String>;
-}
-
-export interface UserEdgeSubscription
-  extends Promise<AsyncIterator<UserEdge>>,
-    Fragmentable {
-  node: <T = UserSubscription>() => T;
-  cursor: () => Promise<AsyncIterator<String>>;
-}
-
-export interface OwnerConnection {
-  pageInfo: PageInfo;
-  edges: OwnerEdge[];
-}
-
-export interface OwnerConnectionPromise
-  extends Promise<OwnerConnection>,
-    Fragmentable {
-  pageInfo: <T = PageInfoPromise>() => T;
-  edges: <T = FragmentableArray<OwnerEdge>>() => T;
-  aggregate: <T = AggregateOwnerPromise>() => T;
-}
-
-export interface OwnerConnectionSubscription
-  extends Promise<AsyncIterator<OwnerConnection>>,
-    Fragmentable {
-  pageInfo: <T = PageInfoSubscription>() => T;
-  edges: <T = Promise<AsyncIterator<OwnerEdgeSubscription>>>() => T;
-  aggregate: <T = AggregateOwnerSubscription>() => T;
-}
+/*
+The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
+*/
+export type String = string;
 
 export type Long = string;
-
-/*
-The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID.
-*/
-export type ID_Input = string | number;
-export type ID_Output = string;
 
 /*
 DateTime scalar input type, allowing Date
@@ -2033,19 +2358,20 @@ DateTime scalar output type, which is always a string
 export type DateTimeOutput = string;
 
 /*
-The `Boolean` scalar type represents `true` or `false`.
-*/
-export type Boolean = boolean;
-
-/*
 The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1. 
 */
 export type Int = number;
 
 /*
-The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
+The `Boolean` scalar type represents `true` or `false`.
 */
-export type String = string;
+export type Boolean = boolean;
+
+/*
+The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID.
+*/
+export type ID_Input = string | number;
+export type ID_Output = string;
 
 /**
  * Model Metadata
@@ -2066,6 +2392,10 @@ export const models: Model[] = [
   },
   {
     name: 'Owner',
+    embedded: false
+  },
+  {
+    name: 'Post',
     embedded: false
   },
   {
