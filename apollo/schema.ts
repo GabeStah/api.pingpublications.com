@@ -1,31 +1,78 @@
-const typeDefs = `
-  type Author {
-    id: Int!
-    firstName: String
-    lastName: String
-    """
-    the list of Posts by this author
-    """
-    posts: [Post]
+import { gql } from 'apollo-server';
+
+export default gql`
+  scalar DateTime
+
+  enum CommitStatus {
+    Pending
+    Processed
   }
 
-  type Post {
-    id: Int!
-    title: String
-    author: Author
-    votes: Int
+  enum RepositoryServiceType {
+    GitHub
+    GitLab
+    Bitbucket
   }
 
-  # the schema allows the following query:
   type Query {
-    posts: [Post]
-    author(id: Int!): Author
+    """
+    feed: [Post!]!
+    filterPosts(searchString: String): [Post!]!
+    post(id: ID!): Post
+    """
+    filterCommits(hash: String): [Commit!]!
+    commit(id: ID!): Commit
+    organization(id: ID!): Organization
+    repository(id: ID!): Repository
+    repositories: [Repository]
   }
 
-  # this schema allows the following mutation:
   type Mutation {
-    upvotePost (
-      postId: Int!
-    ): Post
+    """
+    signupUser(email: String!, name: String): User!
+    createDraft(title: String!, content: String, authorEmail: String!): Post!
+    deletePost(id: ID!): Post
+    publish(id: ID!): Post
+    """
+    deleteRepository(id: ID!): Repository
+  }
+
+  type Commit {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    author: [User!]!
+    committedDate: DateTime!
+    hash: String!
+    message: String!
+    messageHeadline: String!
+    status: CommitStatus!
+  }
+
+  type Organization {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    users: [User!]!
+    handle: String!
+  }
+
+  type Repository {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    name: String!
+    owner: User!
+    service: RepositoryServiceType!
+    commits: [Commit!]!
+  }
+
+  type User {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    email: String!
+    name: String
+    handle: String!
   }
 `;

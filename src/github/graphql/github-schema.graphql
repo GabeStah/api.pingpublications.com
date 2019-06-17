@@ -5,7 +5,7 @@ schema {
   mutation: Mutation
 }
 
-"Represents an object which can take actions on GitHub. Typically a User or Bot."
+"Represents an object which can take actions on GitHub. Typically a UserModel or Bot."
 interface Actor {
   "A URL pointing to the actor's public avatar."
   avatarUrl(
@@ -295,7 +295,7 @@ interface RepositoryInfo {
   name: String!
   "The repository's name with owner."
   nameWithOwner: String!
-  "The User owner of the repository."
+  "The UserModel owner of the repository."
   owner: RepositoryOwner!
   "Identifies when the repository was last pushed to."
   pushedAt: DateTime
@@ -2039,7 +2039,7 @@ type ExternalIdentity implements Node {
   samlIdentity: ExternalIdentitySamlAttributes
   "SCIM Identity attributes"
   scimIdentity: ExternalIdentityScimAttributes
-  "User linked to this external identity. Will be NULL if this identity has not been claimed by an organization member."
+  "UserModel linked to this external identity. Will be NULL if this identity has not been claimed by an organization member."
   user: User
 }
 
@@ -2075,7 +2075,7 @@ type ExternalIdentityScimAttributes {
   username: String
 }
 
-"The connection type for User."
+"The connection type for UserModel."
 type FollowerConnection {
   "A list of edges."
   edges: [UserEdge]
@@ -2087,7 +2087,7 @@ type FollowerConnection {
   totalCount: Int!
 }
 
-"The connection type for User."
+"The connection type for UserModel."
 type FollowingConnection {
   "A list of edges."
   edges: [UserEdge]
@@ -3538,7 +3538,7 @@ type Organization implements Actor & MemberStatusable & Node & ProjectOwner & Re
     role: TeamRole,
     #If true, restrict to only root teams
     rootTeamsOnly: Boolean,
-    #User logins to filter by
+    #UserModel logins to filter by
     userLogins: [String!]
   ): TeamConnection!
   "The HTTP path listing organization's teams"
@@ -3648,7 +3648,7 @@ type OrganizationInvitationEdge {
   node: OrganizationInvitation
 }
 
-"The connection type for User."
+"The connection type for UserModel."
 type OrganizationMemberConnection {
   "A list of edges."
   edges: [OrganizationMemberEdge]
@@ -4835,7 +4835,7 @@ type Query {
     #The login field of a user or organization
     owner: String!
   ): Repository
-  "Lookup a repository owner (ie. either a User or an Organization) by login."
+  "Lookup a repository owner (ie. either a UserModel or an Organization) by login."
   repositoryOwner(
     #The username to lookup the owner by.
     login: String!
@@ -4931,7 +4931,7 @@ type RateLimit {
   resetAt: DateTime!
 }
 
-"The connection type for User."
+"The connection type for UserModel."
 type ReactingUserConnection {
   "A list of edges."
   edges: [ReactingUserEdge]
@@ -5499,7 +5499,7 @@ type Repository implements Node & ProjectOwner & RegistryPackageOwner & Reposito
     #The Git object ID
     oid: GitObjectID
   ): GitObject
-  "The User owner of the repository."
+  "The UserModel owner of the repository."
   owner: RepositoryOwner!
   "The repository parent, if this is a fork."
   parent: Repository
@@ -5678,7 +5678,7 @@ type Repository implements Node & ProjectOwner & RegistryPackageOwner & Reposito
   ): UserConnection!
 }
 
-"The connection type for User."
+"The connection type for UserModel."
 type RepositoryCollaboratorConnection {
   "A list of edges."
   edges: [RepositoryCollaboratorEdge]
@@ -6112,7 +6112,7 @@ type SmimeSignature implements GitSignature {
   wasSignedByGitHub: Boolean!
 }
 
-"The connection type for User."
+"The connection type for UserModel."
 type StargazerConnection {
   "A list of edges."
   edges: [StargazerEdge]
@@ -6273,7 +6273,7 @@ type Team implements MemberStatusable & Node & Subscribable {
     last: Int,
     #Order for connection
     orderBy: TeamOrder,
-    #User logins to filter by
+    #UserModel logins to filter by
     userLogins: [String!]
   ): TeamConnection!
   "The slug corresponding to the organization and team."
@@ -6405,7 +6405,7 @@ type TeamEdge {
   node: Team
 }
 
-"The connection type for User."
+"The connection type for UserModel."
 type TeamMemberConnection {
   "A list of edges."
   edges: [TeamMemberEdge]
@@ -7075,7 +7075,7 @@ type User implements Actor & Node & ProjectOwner & RegistryPackageOwner & Regist
   websiteUrl: URI
 }
 
-"The connection type for User."
+"The connection type for UserModel."
 type UserConnection {
   "A list of edges."
   edges: [UserEdge]
@@ -7936,11 +7936,11 @@ enum StatusState {
 
 "The possible states of a subscription."
 enum SubscriptionState {
-  #The User is never notified.
+  #The UserModel is never notified.
   IGNORED
-  #The User is notified of all conversations.
+  #The UserModel is notified of all conversations.
   SUBSCRIBED
-  #The User is only notified when participating or @mentioned.
+  #The UserModel is only notified when participating or @mentioned.
   UNSUBSCRIBED
 }
 
@@ -8002,9 +8002,9 @@ enum TeamRepositoryOrderField {
 
 "The role of a user on a team."
 enum TeamRole {
-  #User has admin rights on the team.
+  #UserModel has admin rights on the team.
   ADMIN
-  #User is a member of the team.
+  #UserModel is a member of the team.
   MEMBER
 }
 
@@ -8170,7 +8170,7 @@ input ClosePullRequestInput {
 input CommitAuthor {
   "Email addresses to filter by. Commits authored by any of the specified email addresses will be returned."
   emails: [String!]
-  "ID of a User to filter by. If non-null, only commits authored by this user will be returned. This field takes precedence over emails."
+  "ID of a UserModel to filter by. If non-null, only commits authored by this user will be returned. This field takes precedence over emails."
   id: ID
 }
 
@@ -8200,7 +8200,7 @@ input CreateBranchProtectionRuleInput {
   isAdminEnforced: Boolean
   "The glob-like pattern used to determine matching branches."
   pattern: String!
-  "A list of User or Team IDs allowed to push to matching branches."
+  "A list of UserModel or Team IDs allowed to push to matching branches."
   pushActorIds: [ID!]
   "The global relay id of the repository in which a new branch protection rule should be created in."
   repositoryId: ID!
@@ -8222,7 +8222,7 @@ input CreateBranchProtectionRuleInput {
   restrictsPushes: Boolean
   "Is dismissal of pull request reviews restricted."
   restrictsReviewDismissals: Boolean
-  "A list of User or Team IDs allowed to dismiss reviews on pull requests targeting matching branches."
+  "A list of UserModel or Team IDs allowed to dismiss reviews on pull requests targeting matching branches."
   reviewDismissalActorIds: [ID!]
 }
 
@@ -8389,7 +8389,7 @@ input ImportProjectInput {
   columnImports: [ProjectColumnImport!]!
   "The name of Project."
   name: String!
-  "The name of the Organization or User to create the Project under."
+  "The name of the Organization or UserModel to create the Project under."
   ownerName: String!
   "Whether the Project is public or not."
   public: Boolean
@@ -8793,7 +8793,7 @@ input UpdateBranchProtectionRuleInput {
   isAdminEnforced: Boolean
   "The glob-like pattern used to determine matching branches."
   pattern: String
-  "A list of User or Team IDs allowed to push to matching branches."
+  "A list of UserModel or Team IDs allowed to push to matching branches."
   pushActorIds: [ID!]
   "Number of approving reviews required to update matching branches."
   requiredApprovingReviewCount: Int
@@ -8813,7 +8813,7 @@ input UpdateBranchProtectionRuleInput {
   restrictsPushes: Boolean
   "Is dismissal of pull request reviews restricted."
   restrictsReviewDismissals: Boolean
-  "A list of User or Team IDs allowed to dismiss reviews on pull requests targeting matching branches."
+  "A list of UserModel or Team IDs allowed to dismiss reviews on pull requests targeting matching branches."
   reviewDismissalActorIds: [ID!]
 }
 

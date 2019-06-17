@@ -1,4 +1,5 @@
-require('dotenv').config();
+import { config } from 'dotenv';
+config();
 import { ApolloServer } from 'apollo-server';
 
 import resolvers from './resolvers';

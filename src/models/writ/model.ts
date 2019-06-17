@@ -6,12 +6,6 @@ export interface WritInterface extends Document {
   createdAt: Date;
   title?: string;
   updatedAt: Date;
-  //
-  // @prop()
-  // job?: Job;
-  //
-  // @prop({ ref: Car, required: true })
-  // car: Ref<Car>;
 }
 
 const schema = new Schema({
@@ -37,4 +31,4 @@ const schema = new Schema({
   }
 });
 
-export const Writ = model<WritInterface>('writ', schema, 'writs');
+export const WritModel = model<WritInterface>('writ', schema, 'writs');

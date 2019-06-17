@@ -59,7 +59,7 @@ import {
   CommitUpsertWithWhereUniqueNestedInput,
   prisma,
   UserUpsertWithWhereUniqueNestedInput
-} from './prisma/generated/client';
+} from './src/prisma/generated/client';
 
 // import { createHttpLink } from 'apollo-link-http';
 //
@@ -171,9 +171,9 @@ gulp.task('github/test', async () => {
             committedDate: node.committedDate,
             message: node.message,
             messageHeadline: node.messageHeadline,
-            author: {
+            repository: {
               create: {
-                email: node.author.email,
+                email: node.repository.email,
                 name: node.author.name,
                 // TODO: Fix proper handle
                 handle: node.author.name
@@ -188,14 +188,14 @@ gulp.task('github/test', async () => {
           const authorUpsert: UserUpsertWithWhereUniqueNestedInput = {
             where: { email: node.author.email },
             create: {
-              email: node.author.email,
-              name: node.author.name,
+              email: node.repository.email,
+              name: node.repository.name,
               // TODO: Fix proper handle
-              handle: node.author.name
+              handle: node.repository.name
             },
             update: {
               email: node.author.email,
-              name: node.author.name,
+              name: node.repository.name,
               // TODO: Fix proper handle
               handle: node.author.name
             }
@@ -206,7 +206,7 @@ gulp.task('github/test', async () => {
               committedDate: node.committedDate,
               message: node.message,
               messageHeadline: node.messageHeadline,
-              author: {
+              repository: {
                 userUpsert: authorUpsert
               }
             }

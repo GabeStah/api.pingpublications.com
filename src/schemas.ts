@@ -1,37 +1,100 @@
 import { gql } from 'apollo-server';
 
 export default gql`
-  # Comments in GraphQL are defined with the hash (#) symbol.
+  scalar DateTime
 
-  # This "Book" type can be used in other type declarations.
-  type Book {
-    title: String
-    author: String
+  enum CommitStatus {
+    Pending
+    Processed
   }
 
-  type Comment {
-    body: String
-    email: String
-    author: String
+  enum RepositoryServiceType {
+    GitHub
+    GitLab
+    Bitbucket
   }
 
-  type Company {
-    id: ID
-    created_at: String
-    updated_at: String
+  type Mutation {
+    """
+    signupUser(email: String!, name: String): User!
+    createDraft(title: String!, content: String, authorEmail: String!): Post!
+    deletePost(id: ID!): Post
+    publish(id: ID!): Post
+    """
+    createCommit(input: CommitInput): Commit
+    updateCommit(id: ID!, input: CommitInput): Commit
+
+    createRepository(input: RepositoryInput): Repository
+    deleteRepository(id: ID!): Repository
+    updateRepository(id: ID!, input: RepositoryInput): Repository
+  }
+
+  type Query {
+    writs: [Writ!]
+    """
+    feed: [Post!]!
+    filterPosts(searchString: String): [Post!]!
+    post(id: ID!): Post
+    """
+    filterCommits(hash: String): [Commit!]!
+
+    commit(input: CommitFindInput!): Commit
+    commits: [Commit!]
+
+    repository(input: RepositoryFindInput!): Repository
+    repositories: [Repository!]
+  }
+
+  type Commit {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    author: String!
+    committedDate: DateTime!
+    hash: String!
+    message: String!
+    messageHeadline: String!
+    status: CommitStatus!
+  }
+
+  #  type Organization {
+  #    id: ID!
+  #    createdAt: DateTime!
+  #    updatedAt: DateTime!
+  #    users: [User!]!
+  #    handle: String!
+  #  }
+
+  """
+  Code repository.
+  """
+  type Repository {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    name: String!
+    owner: String!
+    service: RepositoryServiceType!
+    commits: [Commit!]
+  }
+
+  #  type Post {
+  #    id: ID
+  #    body: String
+  #    permalink: String
+  #    author: String
+  #    title: String
+  #    tags: [String]
+  #    comments: [Comment]
+  #  }
+
+  type User {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    email: String!
     name: String
-    email_address: String
-    overview: String
-  }
-
-  type Post {
-    id: ID
-    body: String
-    permalink: String
-    author: String
-    title: String
-    tags: [String]
-    comments: [Comment]
+    handle: String!
   }
 
   type Writ {
@@ -43,12 +106,30 @@ export default gql`
     updatedAt: String
   }
 
-  # The "Query" type is the root of all GraphQL queries.
-  # (A "Mutation" type will be covered later on.)
-  type Query {
-    books: [Book]
-    companies: [Company]
-    posts: [Post]
-    writs: [Writ]
+  input CommitFindInput {
+    id: ID
+    hash: String
+  }
+
+  input CommitInput {
+    author: String!
+    committedDate: DateTime!
+    hash: String!
+    message: String!
+    messageHeadline: String!
+    status: CommitStatus! = Pending
+  }
+
+  input RepositoryFindInput {
+    id: ID
+    name: String
+    owner: String
+  }
+
+  input RepositoryInput {
+    name: String!
+    owner: String!
+    service: RepositoryServiceType! = GitHub
+    commits: [String!]
   }
 `;

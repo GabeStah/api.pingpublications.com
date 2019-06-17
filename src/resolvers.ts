@@ -1,40 +1,48 @@
-require('./db');
-// This is a (sample) collection of books we'll be able to query
-// the GraphQL server for.  A more complete example might fetch
-// from an existing data source like a REST API or database.
-import { CompanySchema } from './models/company';
-import { Post } from './models/post';
-import { Writ } from './models/writ';
+import './db';
 
-const books = [
-  {
-    title: 'Assdasdd Potter and the Chamber of Secrets',
-    author: 'J.K. Rowling'
+import { mutations as CommitMutations } from './models/commit';
+import { mutations as RepositoryMutations } from './models/repository';
+
+import { queries as CommitQueries } from './models/commit';
+import { queries as RepositoryQueries } from './models/repository';
+import { queries as WritQueries } from './models/writ';
+
+export default {
+  Mutation: {
+    ...CommitMutations,
+    ...RepositoryMutations
   },
-  {
-    title: 'Jurassic Park',
-    author: 'Michael Crichton'
+  Query: {
+    ...CommitQueries,
+    ...RepositoryQueries,
+    ...WritQueries
   }
-];
+};
 
 // TODO: https://github.com/kenzotakahashi/enamel/blob/master/server/src/resolvers.js
 
 // PAgination: https://codeburst.io/graphql-pagination-by-example-part-2-2803802ef23a
 
-export default {
-  Query: {
-    books: () => books,
-    companies: async () =>
-      CompanySchema.find()
-        .limit(5)
-        .exec(),
-    posts: async () =>
-      await Post.find()
-        .limit(2)
-        .exec(),
-    writs: async () =>
-      await Writ.find()
-        .limit(2)
-        .exec()
-  }
-};
+/**
+ * Example of using .populate(...) after creating base document
+ * to populate referenced objects.
+ * See: https://mongoosejs.com/docs/populate.html
+ * TODO: Must know valid _id for ObjectId fields, otherwise leave null
+ */
+// async createTask(_, {folder, parent, name}, context) {
+//   const userId = getUserId(context)
+//   const task = await Task.create({
+//     name,
+//     parent,
+//     folders: folder ? [folder] : [],
+//     creator: userId
+//   })
+//   return await populateTask(Task.findById(task.id))
+// },
+// function populateTask(promise) {
+//   return promise
+//     .populate('folders', 'name')
+//     .populate('parent', 'name')
+//     .populate('assignees', 'name email firstname lastname avatarColor')
+//     .populate('creator', 'name email firstname lastname')
+// }
