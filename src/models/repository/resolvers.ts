@@ -29,5 +29,42 @@ export const queries = {
       }).populate('commits');
     }
   },
-  repositories: async () => await RepositoryModel.find().populate('commits')
+  repositories: async () => await RepositoryModel.find().populate('commits'),
+  repositoryHashes: async (_, { input }, context) => {
+    //   query repositoryHashes(
+    //     $owner: String!
+    //   $name: String!
+    //   $num: Int = 5
+    //   $refName: String = "master"
+    // ) {
+    //     repository(name: $name, owner: $owner) {
+    //       ref(qualifiedName: $refName) {
+    //         target {
+    //         ... on Commit {
+    //             id
+    //             history(first: $num) {
+    //               pageInfo {
+    //                 hasNextPage
+    //               }
+    //               edges {
+    //                 node {
+    //                   hash: oid
+    //                   messageHeadline
+    //                   message
+    //                   tarballUrl
+    //                   committedDate
+    //                   author {
+    //                     name
+    //                     email
+    //                     date
+    //                   }
+    //                 }
+    //               }
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+  }
 };
