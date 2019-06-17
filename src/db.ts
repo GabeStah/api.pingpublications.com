@@ -6,7 +6,13 @@ import mongoose from 'mongoose';
 
 // const url = `mongodb://root:example@localhost:27017/api-ping-pub-dev`;
 
-const url = `mongodb://root:example@localhost:27017/admin`;
+// const url = `mongodb://newuser:newpassword@localhost:27017/testdb`;
+
+const url = `mongodb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${
+  process.env.DB_HOST
+}:${process.env.DB_PORT}/${process.env.DB_NAME}${process.env.DB_QUERY}`;
+
+console.log(url);
 
 mongoose.connect(url, { useFindAndModify: false, useNewUrlParser: true });
 

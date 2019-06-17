@@ -6,4 +6,4 @@
 FROM mongo:latest
 
 # Initialize user and database.
-COPY init.js /docker-entrypoint-initdb.d/
+COPY init.sh /docker-entrypoint-initdb.d/
