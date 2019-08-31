@@ -19,6 +19,10 @@ import frontmatter from 'remark-frontmatter';
 import html from 'remark-html';
 import Git, { Repository } from 'nodegit';
 
+// const yaml = require('js-yaml');
+import yaml from 'js-yaml';
+import MarkdownIt from 'markdown-it';
+
 const stringify = require('remark-stringify');
 const vfile = require('to-vfile');
 const report = require('vfile-reporter');
@@ -28,15 +32,11 @@ const inserter = require('./src/plugins/inserter');
 
 // var unified = require('unified')
 // var parse = require('remark-parse')
-var remark2rehype = require('remark-rehype');
+const remark2rehype = require('remark-rehype');
 // var stringify = require('rehype-stringify')
 // var vfile = require('to-vfile')
 // var report = require('vfile-reporter')
-var getFrontMatter = require('./src/plugins/get-front-matter');
-
-import { config } from './local_modules/ping-updater/src/config';
-
-import { Options, Parser } from './local_modules/ping-updater';
+const getFrontMatter = require('./src/plugins/get-front-matter');
 
 // @ts-ignore
 const graphql = require('@octokit/graphql').defaults({
@@ -60,6 +60,7 @@ import {
   prisma,
   UserUpsertWithWhereUniqueNestedInput
 } from './src/prisma/generated/client';
+import { RepositoryServiceType } from './src/models/repository';
 
 // import { createHttpLink } from 'apollo-link-http';
 //
@@ -97,491 +98,539 @@ const client = new ApolloClient({
 //   }
 // });
 
-gulp.task('github/test2', async () => {
+import { Cloner } from '@pingpublications/git-cloner';
+
+gulp.task('github/test3', async () => {
   try {
-    const options: Options = Parser.parse(config);
-
-    // await prisma.deleteManyCommits({ createdAt_lte: new Date() });
-    // await prisma.deleteManyOrganizations({ createdAt_lte: new Date() });
-    // await prisma.deleteManyOwners({ createdAt_lte: new Date() });
-    // await prisma.deleteManyRepositories({ createdAt_lte: new Date() });
-    // await prisma.deleteManyUsers({ createdAt_lte: new Date() });
-
-    console.log(options.repositories);
-    // let repo: Repository;
-    for (const repo of options.repositories) {
-      const query = gql`
-        query repositoryHashes(
-          $owner: String!
-          $name: String!
-          $num: Int = 5
-          $refName: String = "master"
-        ) {
-          repository(name: $name, owner: $owner) {
-            ref(qualifiedName: $refName) {
-              target {
-                ... on Commit {
-                  id
-                  history(first: $num) {
-                    pageInfo {
-                      hasNextPage
-                    }
-                    edges {
-                      node {
-                        hash: oid
-                        messageHeadline
-                        message
-                        tarballUrl
-                        committedDate
-                        author {
-                          name
-                          email
-                          date
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      `;
-
-      const result = await client.query({
-        query,
-        variables: {
-          name: repo.name,
-          owner: repo.owner,
-          refName: repo.refName,
-          num: 5
-        }
-      });
-
-      const nodes = result.data.repository.ref.target.history.edges.map(
-        ({ node }: any) => {
-          return node;
-        }
-      );
-
-      console.log(nodes);
-
-      // TODO: Create or upsert MongoDB records from Commit/Repository resolvers.
-      // TESTING NEW STUFF
-
-      const hashes = result.data.repository.ref.target.history.edges.map(
-        ({ node }: any) => {
-          return node.hash;
-        }
-      );
-
-      // const commitsCreate = result.data.repository.ref.target.history.edges.map(
-      //   ({ node }: any) => {
-      //     return {
-      //       hash: node.hash,
-      //       committedDate: node.committedDate,
-      //       message: node.message,
-      //       messageHeadline: node.messageHeadline,
-      //       repository: {
-      //         create: {
-      //           email: node.repository.email,
-      //           name: node.author.name,
-      //           // TODO: Fix proper handle
-      //           handle: node.author.name
-      //         }
-      //       }
-      //     };
-      //   }
-      // );
-      //
-      // console.log(commitsCreate);
-      //
-      //   const commitsUpsert: CommitUpsertWithWhereUniqueNestedInput = result.data.repository.ref.target.history.edges.map(
-      //     ({ node }: any) => {
-      //       const authorUpsert: UserUpsertWithWhereUniqueNestedInput = {
-      //         where: { email: node.author.email },
-      //         create: {
-      //           email: node.repository.email,
-      //           name: node.repository.name,
-      //           // TODO: Fix proper handle
-      //           handle: node.repository.name
-      //         },
-      //         update: {
-      //           email: node.author.email,
-      //           name: node.repository.name,
-      //           // TODO: Fix proper handle
-      //           handle: node.author.name
-      //         }
-      //       };
-      //       return {
-      //         where: {
-      //           hash: node.hash,
-      //           committedDate: node.committedDate,
-      //           message: node.message,
-      //           messageHeadline: node.messageHeadline,
-      //           repository: {
-      //             userUpsert: authorUpsert
-      //           }
-      //         }
-      //       };
-      //     }
-      //   );
-      //
-      //   const output = await prisma.upsertRepository({
-      //     where: { id: '123123' },
-      //     create: {
-      //       name: repo.name,
-      //       owner: { create: { handle: repo.owner } },
-      //       service: 'GitHub',
-      //       commits: commitsCreate
-      //     },
-      //     update: {
-      //       name: repo.name,
-      //       owner: { create: { handle: repo.owner } },
-      //       service: 'GitHub',
-      //       commits: {
-      //         upsert: commitsUpsert
-      //       }
-      //     }
-      //   });
-      //
-      //   console.log(output);
-      //
-      //   // const { repository } = await graphql(
-      //   //   `
-      //   //     query repositoryHashes(
-      //   //       $owner: String!
-      //   //       $name: String!
-      //   //       $num: Int = 5
-      //   //       $refName: String = "master"
-      //   //     ) {
-      //   //       repository(name: $name, owner: $owner) {
-      //   //         ref(qualifiedName: $refName) {
-      //   //           target {
-      //   //             ... on Commit {
-      //   //               id
-      //   //               history(first: $num) {
-      //   //                 pageInfo {
-      //   //                   hasNextPage
-      //   //                 }
-      //   //                 edges {
-      //   //                   node {
-      //   //                     hash: oid
-      //   //                     messageHeadline
-      //   //                     message
-      //   //                     tarballUrl
-      //   //                     author {
-      //   //                       name
-      //   //                       email
-      //   //                       date
-      //   //                     }
-      //   //                   }
-      //   //                 }
-      //   //               }
-      //   //             }
-      //   //           }
-      //   //         }
-      //   //       }
-      //   //     }
-      //   //   `,
-      //   //   {
-      //   //     name: repo.name,
-      //   //     owner: repo.owner,
-      //   //     refName: repo.refName,
-      //   //     num: 5
-      //   //   }
-      //   // );
-      //
-      //   console.log(`--- REPOSITORY FROM API ---`);
-      //   console.log(result);
-      // }
-      //
-      // // // Iterate through repositories
-      // // if (config.repositories) {
-      // //   // TODO: Query repos from GraphQL prior to local scans
-      // //   // See: https://github.com/octokit/graphql.js/tree/master
-      // //
-      // //   for (const repoObject of config.repositories) {
-      // //     let url: string;
-      // //     let path: string;
-      // //     switch (repoObject.service) {
-      // //       case RepositoryServiceTypes.GitHub: {
-      // //         url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
-      // //         path = `./.repos/${repoObject.owner}/${repoObject.name}`;
-      // //         break;
-      // //       }
-      // //       default: {
-      // //         url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
-      // //         path = `./.repos/${repoObject.owner}/${repoObject.name}`;
-      // //       }
-      // //     }
-      // //
-      // //     /**
-      // //      * ??? Start by performing API call with hash of all valid repos?
-      // //      *
-      // //      * 1. Check if local repo exists.
-      // //      * 2. If exists, get hash of most recent commit.
-      // //      *   - Compare hash
-      // //      */
-      // //
-      // //     let repository: Repository | void = await Git.Repository.open(
-      // //       path
-      // //     ).catch(error => {
-      // //       if (error.errno !== -3) {
-      // //         throw error;
-      // //       }
-      // //     });
-      // //     // Check if local exists.
-      // //     if (!repository) {
-      // //       repository = await Git.Clone.clone(url, path);
-      // //     } else {
-      // //       // TODO: Fetch vs pull
-      // //       // await repository.fetch();
-      // //     }
-      // //     const commit: Git.Commit = await repository.getMasterCommit();
-      // //     console.log(commit.date(), commit.toString(), commit.message());
-      // //   }
-      // // }
-    }
+    const options = Cloner.clone();
   } catch (error) {
     console.log(error);
   }
 });
 
-gulp.task('github/test', async () => {
+// gulp.task('github/test2', async () => {
+//   try {
+//     const options: Options = Parser.parse(config);
+//
+//     // await prisma.deleteManyCommits({ createdAt_lte: new Date() });
+//     // await prisma.deleteManyOrganizations({ createdAt_lte: new Date() });
+//     // await prisma.deleteManyOwners({ createdAt_lte: new Date() });
+//     // await prisma.deleteManyRepositories({ createdAt_lte: new Date() });
+//     // await prisma.deleteManyUsers({ createdAt_lte: new Date() });
+//
+//     console.log(options.repositories);
+//     // let repo: Repository;
+//     for (const repo of options.repositories) {
+//       const query = gql`
+//         query repositoryHashes(
+//           $owner: String!
+//           $name: String!
+//           $num: Int = 5
+//           $refName: String = "master"
+//         ) {
+//           repository(name: $name, owner: $owner) {
+//             ref(qualifiedName: $refName) {
+//               target {
+//                 ... on Commit {
+//                   id
+//                   history(first: $num) {
+//                     pageInfo {
+//                       hasNextPage
+//                     }
+//                     edges {
+//                       node {
+//                         hash: oid
+//                         messageHeadline
+//                         message
+//                         tarballUrl
+//                         committedDate
+//                         author {
+//                           name
+//                           email
+//                           date
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       `;
+//
+//       const result = await client.query({
+//         query,
+//         variables: {
+//           name: repo.name,
+//           owner: repo.owner,
+//           refName: repo.refName,
+//           num: 5
+//         }
+//       });
+//
+//       const nodes = result.data.repository.ref.target.history.edges.map(
+//         ({ node }: any) => {
+//           return node;
+//         }
+//       );
+//
+//       console.log(nodes);
+//
+//       // TODO: Create or upsert MongoDB records from Commit/Repository resolvers.
+//       // TESTING NEW STUFF
+//
+//       const hashes = result.data.repository.ref.target.history.edges.map(
+//         ({ node }: any) => {
+//           return node.hash;
+//         }
+//       );
+//
+//       // const commitsCreate = result.data.repository.ref.target.history.edges.map(
+//       //   ({ node }: any) => {
+//       //     return {
+//       //       hash: node.hash,
+//       //       committedDate: node.committedDate,
+//       //       message: node.message,
+//       //       messageHeadline: node.messageHeadline,
+//       //       repository: {
+//       //         create: {
+//       //           email: node.repository.email,
+//       //           name: node.author.name,
+//       //           // TODO: Fix proper handle
+//       //           handle: node.author.name
+//       //         }
+//       //       }
+//       //     };
+//       //   }
+//       // );
+//       //
+//       // console.log(commitsCreate);
+//       //
+// tslint:disable-next-line:max-line-length
+//       //   const commitsUpsert: CommitUpsertWithWhereUniqueNestedInput = result.data.repository.ref.target.history.edges.map(
+//       //     ({ node }: any) => {
+//       //       const authorUpsert: UserUpsertWithWhereUniqueNestedInput = {
+//       //         where: { email: node.author.email },
+//       //         create: {
+//       //           email: node.repository.email,
+//       //           name: node.repository.name,
+//       //           // TODO: Fix proper handle
+//       //           handle: node.repository.name
+//       //         },
+//       //         update: {
+//       //           email: node.author.email,
+//       //           name: node.repository.name,
+//       //           // TODO: Fix proper handle
+//       //           handle: node.author.name
+//       //         }
+//       //       };
+//       //       return {
+//       //         where: {
+//       //           hash: node.hash,
+//       //           committedDate: node.committedDate,
+//       //           message: node.message,
+//       //           messageHeadline: node.messageHeadline,
+//       //           repository: {
+//       //             userUpsert: authorUpsert
+//       //           }
+//       //         }
+//       //       };
+//       //     }
+//       //   );
+//       //
+//       //   const output = await prisma.upsertRepository({
+//       //     where: { id: '123123' },
+//       //     create: {
+//       //       name: repo.name,
+//       //       owner: { create: { handle: repo.owner } },
+//       //       service: 'GitHub',
+//       //       commits: commitsCreate
+//       //     },
+//       //     update: {
+//       //       name: repo.name,
+//       //       owner: { create: { handle: repo.owner } },
+//       //       service: 'GitHub',
+//       //       commits: {
+//       //         upsert: commitsUpsert
+//       //       }
+//       //     }
+//       //   });
+//       //
+//       //   console.log(output);
+//       //
+//       //   // const { repository } = await graphql(
+//       //   //   `
+//       //   //     query repositoryHashes(
+//       //   //       $owner: String!
+//       //   //       $name: String!
+//       //   //       $num: Int = 5
+//       //   //       $refName: String = "master"
+//       //   //     ) {
+//       //   //       repository(name: $name, owner: $owner) {
+//       //   //         ref(qualifiedName: $refName) {
+//       //   //           target {
+//       //   //             ... on Commit {
+//       //   //               id
+//       //   //               history(first: $num) {
+//       //   //                 pageInfo {
+//       //   //                   hasNextPage
+//       //   //                 }
+//       //   //                 edges {
+//       //   //                   node {
+//       //   //                     hash: oid
+//       //   //                     messageHeadline
+//       //   //                     message
+//       //   //                     tarballUrl
+//       //   //                     author {
+//       //   //                       name
+//       //   //                       email
+//       //   //                       date
+//       //   //                     }
+//       //   //                   }
+//       //   //                 }
+//       //   //               }
+//       //   //             }
+//       //   //           }
+//       //   //         }
+//       //   //       }
+//       //   //     }
+//       //   //   `,
+//       //   //   {
+//       //   //     name: repo.name,
+//       //   //     owner: repo.owner,
+//       //   //     refName: repo.refName,
+//       //   //     num: 5
+//       //   //   }
+//       //   // );
+//       //
+//       //   console.log(`--- REPOSITORY FROM API ---`);
+//       //   console.log(result);
+//       // }
+//       //
+//       // Iterate through repositories
+//       if (config.repositories) {
+//         // TODO: Query repos from GraphQL prior to local scans
+//         // See: https://github.com/octokit/graphql.js/tree/master
+//
+//         for (const repoObject of config.repositories) {
+//           let url: string;
+//           let path: string;
+//           switch (repoObject.service) {
+//             case RepositoryServiceType.GitHub: {
+//               url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
+//               path = `./.repos/${repoObject.owner}/${repoObject.name}`;
+//               break;
+//             }
+//             default: {
+//               url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
+//               path = `./.repos/${repoObject.owner}/${repoObject.name}`;
+//             }
+//           }
+//
+//           /**
+//            * ??? Start by performing API call with hash of all valid repos?
+//            *
+//            * 1. Check if local repo exists.
+//            * 2. If exists, get hash of most recent commit.
+//            *   - Compare hash
+//            */
+//
+//           let repository: Repository | void = await Git.Repository.open(
+//             path
+//           ).catch(error => {
+//             if (error.errno !== -3) {
+//               throw error;
+//             }
+//           });
+//           // Check if local exists.
+//           if (!repository) {
+//             const cloneOptions = {
+//               fetchOpts: {
+//                 callbacks: {
+//                   certificateCheck: () => {
+//                     return 1;
+//                   },
+//                   credentials: () => {
+//                     return Git.Cred.userpassPlaintextNew(
+//                       process.env.GITHUB_ACCESS_TOKEN || '',
+//                       'x-oauth-basic'
+//                     );
+//                   }
+//                 }
+//               }
+//             };
+//
+//             repository = await Git.Clone.clone(url, path, cloneOptions);
+//           } else {
+//             // TODO: Fetch vs pull
+//             // await repository.fetch();
+//           }
+//           const commit: Git.Commit = await repository.getMasterCommit();
+//           console.log(commit.date(), commit.toString(), commit.message());
+//         }
+//       }
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   }
+// });
+//
+// gulp.task('github/test', async () => {
+//   try {
+//     const options: Options = Parser.parse(config);
+//
+//     console.log(options.repositories);
+//     let repo: Repository;
+//     for (let repo of options.repositories) {
+//       const query = gql`
+//         query repositoryHashes(
+//           $owner: String!
+//           $name: String!
+//           $num: Int = 5
+//           $refName: String = "master"
+//         ) {
+//           repository(name: $name, owner: $owner) {
+//             ref(qualifiedName: $refName) {
+//               target {
+//                 ... on Commit {
+//                   id
+//                   history(first: $num) {
+//                     pageInfo {
+//                       hasNextPage
+//                     }
+//                     edges {
+//                       node {
+//                         hash: oid
+//                         messageHeadline
+//                         message
+//                         tarballUrl
+//                         committedDate
+//                         author {
+//                           name
+//                           email
+//                           date
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       `;
+//
+//       const result = await client.query({
+//         query: query,
+//         variables: {
+//           name: repo.name,
+//           owner: repo.owner,
+//           refName: repo.refName,
+//           num: 5
+//         }
+//       });
+//
+//       const hashes = result.data.repository.ref.target.history.edges.map(
+//         ({ node }: any) => {
+//           return node.hash;
+//         }
+//       );
+//
+//       const commitsCreate: CommitCreateManyInput = result.data.repository.ref.target.history.edges.map(
+//         ({ node }: any) => {
+//           return {
+//             hash: node.hash,
+//             committedDate: node.committedDate,
+//             message: node.message,
+//             messageHeadline: node.messageHeadline,
+//             repository: {
+//               create: {
+//                 email: node.repository.email,
+//                 name: node.author.name,
+//                 // TODO: Fix proper handle
+//                 handle: node.author.name
+//               }
+//             }
+//           };
+//         }
+//       );
+//
+// tslint:disable-next-line:max-line-length
+//       const commitsUpsert: CommitUpsertWithWhereUniqueNestedInput = result.data.repository.ref.target.history.edges.map(
+//         ({ node }: any) => {
+//           const authorUpsert: UserUpsertWithWhereUniqueNestedInput = {
+//             where: { email: node.author.email },
+//             create: {
+//               email: node.repository.email,
+//               name: node.repository.name,
+//               // TODO: Fix proper handle
+//               handle: node.repository.name
+//             },
+//             update: {
+//               email: node.author.email,
+//               name: node.repository.name,
+//               // TODO: Fix proper handle
+//               handle: node.author.name
+//             }
+//           };
+//           return {
+//             where: {
+//               hash: node.hash,
+//               committedDate: node.committedDate,
+//               message: node.message,
+//               messageHeadline: node.messageHeadline,
+//               repository: {
+//                 userUpsert: authorUpsert
+//               }
+//             }
+//           };
+//         }
+//       );
+//
+//       const output = await prisma.upsertRepository({
+//         where: { id: '123123' },
+//         create: {
+//           name: repo.name,
+//           owner: { create: { handle: repo.owner } },
+//           service: 'GitHub',
+//           commits: commitsCreate
+//         },
+//         update: {
+//           name: repo.name,
+//           owner: { create: { handle: repo.owner } },
+//           service: 'GitHub',
+//           commits: {
+//             upsert: commitsUpsert
+//           }
+//         }
+//       });
+//
+//       console.log(output);
+//
+//       // const { repository } = await graphql(
+//       //   `
+//       //     query repositoryHashes(
+//       //       $owner: String!
+//       //       $name: String!
+//       //       $num: Int = 5
+//       //       $refName: String = "master"
+//       //     ) {
+//       //       repository(name: $name, owner: $owner) {
+//       //         ref(qualifiedName: $refName) {
+//       //           target {
+//       //             ... on Commit {
+//       //               id
+//       //               history(first: $num) {
+//       //                 pageInfo {
+//       //                   hasNextPage
+//       //                 }
+//       //                 edges {
+//       //                   node {
+//       //                     hash: oid
+//       //                     messageHeadline
+//       //                     message
+//       //                     tarballUrl
+//       //                     author {
+//       //                       name
+//       //                       email
+//       //                       date
+//       //                     }
+//       //                   }
+//       //                 }
+//       //               }
+//       //             }
+//       //           }
+//       //         }
+//       //       }
+//       //     }
+//       //   `,
+//       //   {
+//       //     name: repo.name,
+//       //     owner: repo.owner,
+//       //     refName: repo.refName,
+//       //     num: 5
+//       //   }
+//       // );
+//
+//       console.log(`--- REPOSITORY FROM API ---`);
+//       console.log(result);
+//     }
+//
+//     // // Iterate through repositories
+//     // if (config.repositories) {
+//     //   // TODO: Query repos from GraphQL prior to local scans
+//     //   // See: https://github.com/octokit/graphql.js/tree/master
+//     //
+//     //   for (const repoObject of config.repositories) {
+//     //     let url: string;
+//     //     let path: string;
+//     //     switch (repoObject.service) {
+//     //       case RepositoryServiceTypes.GitHub: {
+//     //         url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
+//     //         path = `./.repos/${repoObject.owner}/${repoObject.name}`;
+//     //         break;
+//     //       }
+//     //       default: {
+//     //         url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
+//     //         path = `./.repos/${repoObject.owner}/${repoObject.name}`;
+//     //       }
+//     //     }
+//     //
+//     //     /**
+//     //      * ??? Start by performing API call with hash of all valid repos?
+//     //      *
+//     //      * 1. Check if local repo exists.
+//     //      * 2. If exists, get hash of most recent commit.
+//     //      *   - Compare hash
+//     //      */
+//     //
+//     //     let repository: Repository | void = await Git.Repository.open(
+//     //       path
+//     //     ).catch(error => {
+//     //       if (error.errno !== -3) {
+//     //         throw error;
+//     //       }
+//     //     });
+//     //     // Check if local exists.
+//     //     if (!repository) {
+//     //       repository = await Git.Clone.clone(url, path);
+//     //     } else {
+//     //       // TODO: Fetch vs pull
+//     //       // await repository.fetch();
+//     //     }
+//     //     const commit: Git.Commit = await repository.getMasterCommit();
+//     //     console.log(commit.date(), commit.toString(), commit.message());
+//     //   }
+//     // }
+//   } catch (error) {
+//     console.log(error);
+//   }
+// });
+
+gulp.task('md/markdown-it/test', async () => {
   try {
-    const options: Options = Parser.parse(config);
-
-    await prisma.deleteManyCommits({ createdAt_lte: new Date() });
-    await prisma.deleteManyOrganizations({ createdAt_lte: new Date() });
-    await prisma.deleteManyOwners({ createdAt_lte: new Date() });
-    await prisma.deleteManyRepositories({ createdAt_lte: new Date() });
-    await prisma.deleteManyUsers({ createdAt_lte: new Date() });
-
-    console.log(options.repositories);
-    let repo: Repository;
-    for (let repo of options.repositories) {
-      const query = gql`
-        query repositoryHashes(
-          $owner: String!
-          $name: String!
-          $num: Int = 5
-          $refName: String = "master"
-        ) {
-          repository(name: $name, owner: $owner) {
-            ref(qualifiedName: $refName) {
-              target {
-                ... on Commit {
-                  id
-                  history(first: $num) {
-                    pageInfo {
-                      hasNextPage
-                    }
-                    edges {
-                      node {
-                        hash: oid
-                        messageHeadline
-                        message
-                        tarballUrl
-                        committedDate
-                        author {
-                          name
-                          email
-                          date
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+    glob(__dirname + '/writs/**/test.md', {}, (err, files) => {
+      _.forEach(files, (path: string) => {
+        console.log(`Path: ${path}`);
+        fs.readFile(path, { encoding: 'utf8' }, async (err, data) => {
+          const md = MarkdownIt().use(
+            require('markdown-it-front-matter'),
+            fm => {
+              console.log('FRONTMATTER');
+              console.log(fm);
+              const obj = yaml.safeLoad(fm, 'utf8');
+              console.log(obj);
             }
-          }
-        }
-      `;
-
-      const result = await client.query({
-        query: query,
-        variables: {
-          name: repo.name,
-          owner: repo.owner,
-          refName: repo.refName,
-          num: 5
-        }
+          );
+          const result = md.render(data);
+          console.log('RESULT');
+          console.log(result);
+        });
       });
-
-      const hashes = result.data.repository.ref.target.history.edges.map(
-        ({ node }: any) => {
-          return node.hash;
-        }
-      );
-
-      const commitsCreate: CommitCreateManyInput = result.data.repository.ref.target.history.edges.map(
-        ({ node }: any) => {
-          return {
-            hash: node.hash,
-            committedDate: node.committedDate,
-            message: node.message,
-            messageHeadline: node.messageHeadline,
-            repository: {
-              create: {
-                email: node.repository.email,
-                name: node.author.name,
-                // TODO: Fix proper handle
-                handle: node.author.name
-              }
-            }
-          };
-        }
-      );
-
-      const commitsUpsert: CommitUpsertWithWhereUniqueNestedInput = result.data.repository.ref.target.history.edges.map(
-        ({ node }: any) => {
-          const authorUpsert: UserUpsertWithWhereUniqueNestedInput = {
-            where: { email: node.author.email },
-            create: {
-              email: node.repository.email,
-              name: node.repository.name,
-              // TODO: Fix proper handle
-              handle: node.repository.name
-            },
-            update: {
-              email: node.author.email,
-              name: node.repository.name,
-              // TODO: Fix proper handle
-              handle: node.author.name
-            }
-          };
-          return {
-            where: {
-              hash: node.hash,
-              committedDate: node.committedDate,
-              message: node.message,
-              messageHeadline: node.messageHeadline,
-              repository: {
-                userUpsert: authorUpsert
-              }
-            }
-          };
-        }
-      );
-
-      const output = await prisma.upsertRepository({
-        where: { id: '123123' },
-        create: {
-          name: repo.name,
-          owner: { create: { handle: repo.owner } },
-          service: 'GitHub',
-          commits: commitsCreate
-        },
-        update: {
-          name: repo.name,
-          owner: { create: { handle: repo.owner } },
-          service: 'GitHub',
-          commits: {
-            upsert: commitsUpsert
-          }
-        }
-      });
-
-      console.log(output);
-
-      // const { repository } = await graphql(
-      //   `
-      //     query repositoryHashes(
-      //       $owner: String!
-      //       $name: String!
-      //       $num: Int = 5
-      //       $refName: String = "master"
-      //     ) {
-      //       repository(name: $name, owner: $owner) {
-      //         ref(qualifiedName: $refName) {
-      //           target {
-      //             ... on Commit {
-      //               id
-      //               history(first: $num) {
-      //                 pageInfo {
-      //                   hasNextPage
-      //                 }
-      //                 edges {
-      //                   node {
-      //                     hash: oid
-      //                     messageHeadline
-      //                     message
-      //                     tarballUrl
-      //                     author {
-      //                       name
-      //                       email
-      //                       date
-      //                     }
-      //                   }
-      //                 }
-      //               }
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //   `,
-      //   {
-      //     name: repo.name,
-      //     owner: repo.owner,
-      //     refName: repo.refName,
-      //     num: 5
-      //   }
-      // );
-
-      console.log(`--- REPOSITORY FROM API ---`);
-      console.log(result);
-    }
-
-    // // Iterate through repositories
-    // if (config.repositories) {
-    //   // TODO: Query repos from GraphQL prior to local scans
-    //   // See: https://github.com/octokit/graphql.js/tree/master
-    //
-    //   for (const repoObject of config.repositories) {
-    //     let url: string;
-    //     let path: string;
-    //     switch (repoObject.service) {
-    //       case RepositoryServiceTypes.GitHub: {
-    //         url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
-    //         path = `./.repos/${repoObject.owner}/${repoObject.name}`;
-    //         break;
-    //       }
-    //       default: {
-    //         url = `https://github.com/${repoObject.owner}/${repoObject.name}`;
-    //         path = `./.repos/${repoObject.owner}/${repoObject.name}`;
-    //       }
-    //     }
-    //
-    //     /**
-    //      * ??? Start by performing API call with hash of all valid repos?
-    //      *
-    //      * 1. Check if local repo exists.
-    //      * 2. If exists, get hash of most recent commit.
-    //      *   - Compare hash
-    //      */
-    //
-    //     let repository: Repository | void = await Git.Repository.open(
-    //       path
-    //     ).catch(error => {
-    //       if (error.errno !== -3) {
-    //         throw error;
-    //       }
-    //     });
-    //     // Check if local exists.
-    //     if (!repository) {
-    //       repository = await Git.Clone.clone(url, path);
-    //     } else {
-    //       // TODO: Fetch vs pull
-    //       // await repository.fetch();
-    //     }
-    //     const commit: Git.Commit = await repository.getMasterCommit();
-    //     console.log(commit.date(), commit.toString(), commit.message());
-    //   }
-    // }
+    });
   } catch (error) {
-    console.log(error);
+    throw error;
   }
 });
 

@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "packages": {
+    "@pingpublications/git-cloner": {
+      "signature": "7d461bf6ebd047b962beefc38ca15aac",
+      "file": true
+    }
+  }
+}

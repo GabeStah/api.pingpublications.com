@@ -57,6 +57,12 @@ export default gql`
     status: CommitStatus!
   }
 
+  type GithubUser @key(fields: "upc") {
+    upc: String!
+    name: String!
+    price: Int
+  }
+
   #  type Organization {
   #    id: ID!
   #    createdAt: DateTime!

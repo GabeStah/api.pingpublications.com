@@ -1,5 +1,5 @@
 {
-  "name": "api.pingpublications.com",
+  "name": "@pingpublications/api.pingpublications.com",
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
@@ -11,13 +11,17 @@
     "start:watch": "nodemon ./dist/main.js",
     "prisma:docker:up": "docker-compose up",
     "prisma:deploy": "src/prisma deploy",
-    "prisma:generate": "src/prisma generate"
+    "prisma:generate": "src/prisma generate",
+    "yalc:add:@pingpublications/git-cloner": "yalc add @pingpublications/git-cloner"
   },
   "keywords": [],
   "repository": "",
   "license": "ISC",
   "dependencies": {
+    "@apollo/federation": "^0.6.4",
+    "@apollo/gateway": "^0.6.6",
     "@octokit/graphql": "^2.1.2",
+    "@pingpublications/git-cloner": "file:.yalc/@pingpublications/git-cloner",
     "apollo-boost": "^0.3.1",
     "apollo-server": "^2.4.8",
     "glob": "^7.1.4",
@@ -26,7 +30,10 @@
     "graphql-tools": "^4.0.4",
     "gulp": "^4.0.1",
     "gulp-typescript": "^5.0.1",
+    "js-yaml": "^3.13.1",
     "lodash": "^4.17.11",
+    "markdown-it": "^8.4.2",
+    "markdown-it-front-matter": "^0.1.2",
     "mongoose": "^5.5.5",
     "node-fetch": "^2.6.0",
     "nodegit": "^0.24.3",

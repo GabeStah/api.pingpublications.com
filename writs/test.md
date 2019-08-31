@@ -1,8 +1,8 @@
 ---
 metadata: this is metadata
 tags:
-    - one
-    - two
+  - one
+  - two
 title: My Blog
 description: Like I said, my bloggg!
 example:
